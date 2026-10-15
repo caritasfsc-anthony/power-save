@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="明愛慳電教育 — 黑房揀燈、開冷氣／雪櫃，即時睇光同耗電" />
+    <meta name="description" content="明愛慳電教育 — 黑房揀燈、冷氣＋循環扇、雪櫃收納，即時睇光同耗電" />
     <meta name="theme-color" content="#050508" />
     <title>慳電英雄｜黑房揀燈 — 明愛教育</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,7 +23,7 @@
         <div class="prompt-card">
           <p class="prompt-kicker">Caritas 明愛 · 慳電教育</p>
           <h1>選擇燈種，照亮呢間房</h1>
-          <p class="prompt-sub">一開始冇光源——揀燈種，再開窗口式冷氣／雪櫃，即時睇光同耗電。</p>
+          <p class="prompt-sub">一開始冇光源——揀燈種，再開冷氣／循環扇／雪櫃，玩收納同擺位慳電。</p>
         </div>
       </div>
 
@@ -36,7 +36,7 @@
           </span>
           <div>
             <strong>慳電英雄</strong>
-            <span>照明大法師 · 第一回</span>
+            <span>照明 · 冷氣循環 · 雪櫃收納</span>
           </div>
         </div>
         <button type="button" id="btn-all-off" class="btn btn-ghost" title="關掉所有燈">
@@ -105,6 +105,14 @@
                 <span class="switch" aria-hidden="true"></span>
               </label>
               <label class="appliance-toggle">
+                <input type="checkbox" id="toggle-fan" />
+                <span class="appliance-info">
+                  <span class="appliance-name">循環扇</span>
+                  <span class="appliance-meta" id="fan-watts-label">約 45 W</span>
+                </span>
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+              <label class="appliance-toggle">
                 <input type="checkbox" id="toggle-fridge" checked />
                 <span class="appliance-info">
                   <span class="appliance-name">雪櫃</span>
@@ -113,7 +121,93 @@
                 <span class="switch" aria-hidden="true"></span>
               </label>
             </div>
-            <p class="hint">冷氣跟每日使用時數；雪櫃開着時按全日運行約計</p>
+            <p class="hint">冷氣／循環扇跟每日時數；雪櫃開着時按全日約計</p>
+          </section>
+
+          <section class="dock-section practice-panel" id="fan-practice-panel" hidden>
+            <h2>循環扇擺位 <span class="badge-soft" id="fan-save-badge" hidden>約慳 17%</span></h2>
+            <p class="practice-intro">循環扇係冷氣嘅神隊友——擺對位，冷空氣循環更快。</p>
+            <div class="placement-cards" role="radiogroup" aria-label="循環扇擺位">
+              <label class="placement-card">
+                <input type="radio" name="fan-placement" value="correct" checked />
+                <span class="placement-body">
+                  <strong>正確</strong>
+                  <span>出風口下方 · 仰角吹向室內中央</span>
+                </span>
+              </label>
+              <label class="placement-card">
+                <input type="radio" name="fan-placement" value="wrong" />
+                <span class="placement-body">
+                  <strong>錯誤</strong>
+                  <span>亂擺／對住牆——冇慳電效果</span>
+                </span>
+              </label>
+            </div>
+            <p class="hint" id="fan-tip">擺喺冷氣出風口下方，仰角吹向室內中央。</p>
+          </section>
+
+          <section class="dock-section practice-panel" id="fridge-practice-panel">
+            <h2>第三回：雪櫃收納</h2>
+            <p class="practice-intro">雪櫃係全日最勤力嘅家電——唔好塞爆佢！</p>
+
+            <label class="select-row">
+              <span>雪櫃容量</span>
+              <select id="fridge-fill" aria-label="雪櫃裝滿程度">
+                <option value="empty">太空</option>
+                <option value="seventy" selected>七分滿（最好）</option>
+                <option value="stuffed">塞爆</option>
+              </select>
+            </label>
+            <p class="warn-line" id="fridge-warn" hidden></p>
+
+            <div class="practice-checks">
+              <label class="practice-check">
+                <input type="checkbox" id="practice-cool" checked />
+                <span class="check-ui" aria-hidden="true"></span>
+                <span class="check-text">
+                  <strong>熱嘢放涼先入雪櫃</strong>
+                  <em>熱湯即入會令壓縮機更食電</em>
+                </span>
+              </label>
+              <label class="practice-check">
+                <input type="checkbox" id="practice-seal" checked />
+                <span class="check-ui" aria-hidden="true"></span>
+                <span class="check-text">
+                  <strong>檢查門邊膠邊密封</strong>
+                  <em>膠邊老化漏冷氣＝浪費電</em>
+                </span>
+              </label>
+              <label class="practice-check">
+                <input type="checkbox" id="practice-heat" checked />
+                <span class="check-ui" aria-hidden="true"></span>
+                <span class="check-text">
+                  <strong>遠離熱源</strong>
+                  <em>唔放陽光直射／爐邊</em>
+                </span>
+              </label>
+              <label class="practice-check">
+                <input type="checkbox" id="practice-door" checked />
+                <span class="check-ui" aria-hidden="true"></span>
+                <span class="check-text">
+                  <strong>減少開關門次數／時間</strong>
+                  <em>想清楚先開，快取快關</em>
+                </span>
+              </label>
+            </div>
+            <p class="practice-status" id="fridge-status">已做好 5/5 項習慣</p>
+
+            <button type="button" class="notes-toggle" id="notes-toggle" aria-expanded="false" aria-controls="notes-body">
+              注意事項 ▾
+            </button>
+            <div class="notes-body" id="notes-body">
+              <ul class="notes-list">
+                <li>新機／搬動後請<strong>靜置兩小時</strong>再開</li>
+                <li><strong>上方不可置物</strong>，方便散熱</li>
+                <li>放<strong>陰涼通風</strong>處</li>
+                <li>冷藏格約<strong>七分滿</strong>最理想</li>
+                <li><strong>有需要再開</strong>，減少漏冷</li>
+              </ul>
+            </div>
           </section>
 
           <section class="dock-section">

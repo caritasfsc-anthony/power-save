@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /**
- * Procedural interior: floor, walls, ceiling, desk, chair, window + AC, fridge, fixture.
+ * Procedural interior: floor, walls, ceiling, desk, chair, window + AC, fridge, circulation fan, fixture.
  * Materials start dark (MeshStandardMaterial) and respond to scene lights.
  */
 
@@ -39,12 +39,28 @@ export class Room {
     this.acBodyMat = null;
     /** @type {THREE.MeshStandardMaterial | null} */
     this.fridgeLedMat = null;
+    /** @type {THREE.MeshStandardMaterial | null} */
+    this.fanLedMat = null;
+    /** @type {THREE.Group | null} */
+    this.fanRoot = null;
+    /** @type {THREE.Group | null} */
+    this.fanBladeGroup = null;
+    /** @type {THREE.Group | null} */
+    this.airflowGroup = null;
+    /** @type {THREE.Group | null} */
+    this.stoveGroup = null;
+    /** @type {THREE.Group | null} */
+    this.fridgeFillGroup = null;
+    this._fanPlacement = 'correct';
 
     this._buildShell();
     this._buildWindow();
     this._buildWindowAC();
     this._buildFurniture();
     this._buildFridge();
+    this._buildStove();
+    this._buildCirculationFan();
+    this._buildAirflowHints();
     this._buildFixture();
   }
 
@@ -557,6 +573,327 @@ export class Room {
     );
     socket.position.y = -0.4;
     this.ceilingAnchor.add(socket);
+  }
+
+
+  /**
+   * Compact stove — moved next to fridge when「遠離熱源」is off.
+   */
+  _buildStove() {
+    const { W } = this.size;
+    this.stoveGroup = new THREE.Group();
+    this.stoveGroup.name = 'stove';
+    this.group.add(this.stoveGroup);
+
+    const body = std(0x2a2e34, { roughness: 0.55, metalness: 0.35 });
+    const top = std(0x1a1c20, { roughness: 0.4, metalness: 0.5 });
+    const burner = std(0x111214, { roughness: 0.7, metalness: 0.4 });
+    const glow = new THREE.MeshStandardMaterial({
+      color: 0x331110,
+      roughness: 0.6,
+      metalness: 0.1,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
+    });
+    this._track(glow);
+    this.stoveGlowMat = glow;
+
+    const bodyMesh = new THREE.Mesh(
+      this._track(new THREE.BoxGeometry(0.55, 0.85, 0.5)),
+      body
+    );
+    bodyMesh.position.set(0, 0.425, 0);
+    bodyMesh.castShadow = true;
+    bodyMesh.receiveShadow = true;
+    this.stoveGroup.add(bodyMesh);
+
+    const topMesh = new THREE.Mesh(
+      this._track(new THREE.BoxGeometry(0.58, 0.04, 0.52)),
+      top
+    );
+    topMesh.position.set(0, 0.87, 0);
+    topMesh.castShadow = true;
+    this.stoveGroup.add(topMesh);
+
+    for (const [ox, oz] of [
+      [-0.14, -0.1],
+      [0.14, -0.1],
+      [-0.14, 0.12],
+      [0.14, 0.12],
+    ]) {
+      const b = new THREE.Mesh(
+        this._track(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16)),
+        burner
+      );
+      b.position.set(ox, 0.9, oz);
+      this.stoveGroup.add(b);
+
+      const ring = new THREE.Mesh(
+        this._track(new THREE.TorusGeometry(0.055, 0.008, 8, 16)),
+        glow
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(ox, 0.915, oz);
+      this.stoveGroup.add(ring);
+    }
+
+    // Default: far from fridge (left back corner near plant)
+    this._stoveFar = new THREE.Vector3(-2.2, 0, -2.5);
+    this._stoveNear = new THREE.Vector3(W / 2 - 0.95, 0, 0.85);
+    this.stoveGroup.position.copy(this._stoveFar);
+  }
+
+  /**
+   * Pedestal / floor circulation fan.
+   */
+  _buildCirculationFan() {
+    const { W } = this.size;
+    this.fanRoot = new THREE.Group();
+    this.fanRoot.name = 'circulationFan';
+    this.group.add(this.fanRoot);
+
+    const metal = std(0x5a6068, { roughness: 0.4, metalness: 0.55 });
+    const dark = std(0x2a2e34, { roughness: 0.55, metalness: 0.35 });
+    const plastic = std(0xd8dce2, { roughness: 0.5, metalness: 0.15 });
+
+    this.fanLedMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1c20,
+      roughness: 0.4,
+      metalness: 0.1,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
+    });
+    this._track(this.fanLedMat);
+
+    // Base
+    const base = new THREE.Mesh(
+      this._track(new THREE.CylinderGeometry(0.18, 0.22, 0.04, 20)),
+      dark
+    );
+    base.position.y = 0.02;
+    base.castShadow = true;
+    base.receiveShadow = true;
+    this.fanRoot.add(base);
+
+    // Pole
+    const pole = new THREE.Mesh(
+      this._track(new THREE.CylinderGeometry(0.025, 0.03, 0.55, 10)),
+      metal
+    );
+    pole.position.y = 0.3;
+    pole.castShadow = true;
+    this.fanRoot.add(pole);
+
+    // Head pivot (tilt for 仰角)
+    this.fanHead = new THREE.Group();
+    this.fanHead.position.set(0, 0.62, 0);
+    this.fanRoot.add(this.fanHead);
+
+    // Motor hub
+    const hub = new THREE.Mesh(
+      this._track(new THREE.CylinderGeometry(0.07, 0.08, 0.1, 16)),
+      dark
+    );
+    hub.rotation.x = Math.PI / 2;
+    hub.castShadow = true;
+    this.fanHead.add(hub);
+
+    // Guard ring
+    const guard = new THREE.Mesh(
+      this._track(new THREE.TorusGeometry(0.22, 0.012, 8, 32)),
+      metal
+    );
+    guard.position.z = 0.06;
+    this.fanHead.add(guard);
+
+    // Outer guard disc (wire look via flat ring)
+    const guardDisc = new THREE.Mesh(
+      this._track(new THREE.RingGeometry(0.08, 0.21, 24)),
+      new THREE.MeshStandardMaterial({
+        color: 0x888e98,
+        roughness: 0.45,
+        metalness: 0.4,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.35,
+      })
+    );
+    this._track(guardDisc.material);
+    guardDisc.position.z = 0.06;
+    this.fanHead.add(guardDisc);
+
+    // Blades
+    this.fanBladeGroup = new THREE.Group();
+    this.fanBladeGroup.position.z = 0.08;
+    this.fanHead.add(this.fanBladeGroup);
+
+    const bladeMat = plastic;
+    for (let i = 0; i < 3; i++) {
+      const blade = new THREE.Mesh(
+        this._track(new THREE.BoxGeometry(0.08, 0.2, 0.012)),
+        bladeMat
+      );
+      blade.position.y = 0.1;
+      blade.castShadow = true;
+      const pivot = new THREE.Group();
+      pivot.rotation.z = (i * Math.PI * 2) / 3;
+      pivot.add(blade);
+      this.fanBladeGroup.add(pivot);
+    }
+
+    // Center cap
+    const cap = new THREE.Mesh(
+      this._track(new THREE.SphereGeometry(0.035, 12, 10)),
+      metal
+    );
+    cap.position.z = 0.1;
+    this.fanHead.add(cap);
+
+    // Power LED on base
+    const led = new THREE.Mesh(
+      this._track(new THREE.SphereGeometry(0.015, 8, 6)),
+      this.fanLedMat
+    );
+    led.position.set(0.12, 0.05, 0.1);
+    this.fanRoot.add(led);
+
+    // Correct: under AC outlet, angled up toward room center
+    this._fanCorrectPos = new THREE.Vector3(-W / 2 + 0.95, 0, -0.35);
+    this._fanCorrectRotY = Math.PI / 2 - 0.35; // face toward room center
+    this._fanCorrectTilt = -0.55; // 仰角 (head tip up)
+
+    // Wrong: against front-right wall, blowing into wall
+    this._fanWrongPos = new THREE.Vector3(W / 2 - 0.7, 0, 2.4);
+    this._fanWrongRotY = -Math.PI / 2;
+    this._fanWrongTilt = 0.15;
+
+    this.setFanPlacement('correct');
+  }
+
+  /**
+   * Soft translucent airflow arcs — shown when AC+fan+correct.
+   */
+  _buildAirflowHints() {
+    const { W } = this.size;
+    this.airflowGroup = new THREE.Group();
+    this.airflowGroup.name = 'airflow';
+    this.airflowGroup.visible = false;
+    this.group.add(this.airflowGroup);
+
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x66ccff,
+      transparent: true,
+      opacity: 0.25,
+      depthWrite: false,
+    });
+    this._track(mat);
+
+    for (let i = 0; i < 5; i++) {
+      const arrow = new THREE.Mesh(
+        this._track(new THREE.ConeGeometry(0.04, 0.14, 8)),
+        mat.clone()
+      );
+      this._track(arrow.material);
+      const t = i / 4;
+      arrow.position.set(
+        -W / 2 + 1.1 + t * 1.8,
+        0.9 + t * 0.55,
+        -0.2 + t * 0.9
+      );
+      arrow.rotation.z = -0.9;
+      arrow.rotation.y = 0.4;
+      arrow.userData.baseY = arrow.position.y;
+      this.airflowGroup.add(arrow);
+    }
+  }
+
+  /**
+   * @param {'correct' | 'wrong'} placement
+   */
+  setFanPlacement(placement) {
+    if (!this.fanRoot || !this.fanHead) return;
+    this._fanPlacement = placement;
+    if (placement === 'correct') {
+      this.fanRoot.position.copy(this._fanCorrectPos);
+      this.fanRoot.rotation.y = this._fanCorrectRotY;
+      this.fanHead.rotation.x = this._fanCorrectTilt;
+    } else {
+      this.fanRoot.position.copy(this._fanWrongPos);
+      this.fanRoot.rotation.y = this._fanWrongRotY;
+      this.fanHead.rotation.x = this._fanWrongTilt;
+    }
+  }
+
+  /**
+   * @param {boolean} near — true when fridge is next to heat source
+   */
+  setStoveNearFridge(near) {
+    if (!this.stoveGroup) return;
+    this.stoveGroup.position.copy(near ? this._stoveNear : this._stoveFar);
+    if (this.stoveGlowMat) {
+      if (near) {
+        this.stoveGlowMat.emissive.setHex(0xff4422);
+        this.stoveGlowMat.emissiveIntensity = 0.85;
+        this.stoveGlowMat.color.setHex(0x552210);
+      } else {
+        this.stoveGlowMat.emissive.setHex(0x000000);
+        this.stoveGlowMat.emissiveIntensity = 0;
+        this.stoveGlowMat.color.setHex(0x331110);
+      }
+    }
+  }
+
+  /**
+   * Small cubes on fridge top hinting fill level.
+   * @param {'empty' | 'seventy' | 'stuffed' | 'off'} fill
+   */
+  setFridgeFillVisual(fill) {
+    if (!this.fridgeFillGroup) {
+      const { W } = this.size;
+      this.fridgeFillGroup = new THREE.Group();
+      this.fridgeFillGroup.name = 'fridgeFill';
+      this.fridgeFillGroup.position.set(W / 2 - 0.38, 1.78, 0.85);
+      this.group.add(this.fridgeFillGroup);
+
+      this._fillMats = [];
+      for (let i = 0; i < 5; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: 0x4a6a8a,
+          roughness: 0.7,
+          metalness: 0.1,
+          transparent: true,
+          opacity: 0.85,
+        });
+        this._track(mat);
+        this._fillMats.push(mat);
+        const box = new THREE.Mesh(
+          this._track(new THREE.BoxGeometry(0.1, 0.08, 0.1)),
+          mat
+        );
+        box.position.set((i % 3) * 0.12 - 0.12, Math.floor(i / 3) * 0.1, (i % 2) * 0.08 - 0.04);
+        box.castShadow = true;
+        this.fridgeFillGroup.add(box);
+      }
+    }
+
+    const n =
+      fill === 'off' || fill === 'empty'
+        ? 0
+        : fill === 'seventy'
+          ? 3
+          : 5;
+    this.fridgeFillGroup.children.forEach((c, i) => {
+      c.visible = i < n;
+      if (this._fillMats[i]) {
+        if (fill === 'stuffed') {
+          this._fillMats[i].color.setHex(0xc45a3a);
+        } else {
+          this._fillMats[i].color.setHex(0x4a8a6a);
+        }
+      }
+    });
+    // 「上方不可置物」— stuffed stacks on top as a gentle teaching cue
+    this.fridgeFillGroup.visible = fill !== 'off';
   }
 
   dispose() {

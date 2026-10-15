@@ -25,6 +25,13 @@ export class UI {
       equalBrightness: true,
       acOn: false,
       fridgeOn: true,
+      fanOn: false,
+      fanPlacement: /** @type {'correct' | 'wrong'} */ ('correct'),
+      fridgeFill: /** @type {'empty' | 'seventy' | 'stuffed'} */ ('seventy'),
+      coolBeforeStore: true,
+      doorSealOk: true,
+      awayFromHeat: true,
+      lessDoorOpen: true,
     };
 
     this.els = {
@@ -53,13 +60,30 @@ export class UI {
       mascotBadge: document.getElementById('mascot-badge'),
       acToggle: document.getElementById('toggle-ac'),
       fridgeToggle: document.getElementById('toggle-fridge'),
+      fanToggle: document.getElementById('toggle-fan'),
       acWattsLabel: document.getElementById('ac-watts-label'),
       fridgeWattsLabel: document.getElementById('fridge-watts-label'),
+      fanWattsLabel: document.getElementById('fan-watts-label'),
+      fridgePanel: document.getElementById('fridge-practice-panel'),
+      fanPanel: document.getElementById('fan-practice-panel'),
+      fridgeFill: document.getElementById('fridge-fill'),
+      fridgeWarn: document.getElementById('fridge-warn'),
+      fridgeStatus: document.getElementById('fridge-status'),
+      fanPlacement: [...document.querySelectorAll('input[name="fan-placement"]')],
+      fanSaveBadge: document.getElementById('fan-save-badge'),
+      fanTipEl: document.getElementById('fan-tip'),
+      practiceCool: document.getElementById('practice-cool'),
+      practiceSeal: document.getElementById('practice-seal'),
+      practiceHeat: document.getElementById('practice-heat'),
+      practiceDoor: document.getElementById('practice-door'),
+      notesToggle: document.getElementById('notes-toggle'),
+      notesBody: document.getElementById('notes-body'),
     };
 
     this._bind();
     this._setupMascot();
     this._syncApplianceLabels();
+    this._syncPracticePanels();
     this.renderMetrics();
   }
 
@@ -120,6 +144,7 @@ export class UI {
       this.els.acToggle.checked = this.state.acOn;
       this.els.acToggle.addEventListener('change', () => {
         this.state.acOn = this.els.acToggle.checked;
+        this._syncPracticePanels();
         this._updateTip();
         this._emit();
       });
@@ -129,10 +154,59 @@ export class UI {
       this.els.fridgeToggle.checked = this.state.fridgeOn;
       this.els.fridgeToggle.addEventListener('change', () => {
         this.state.fridgeOn = this.els.fridgeToggle.checked;
+        this._syncPracticePanels();
         this._updateTip();
         this._emit();
       });
     }
+
+    if (this.els.fanToggle) {
+      this.els.fanToggle.checked = this.state.fanOn;
+      this.els.fanToggle.addEventListener('change', () => {
+        this.state.fanOn = this.els.fanToggle.checked;
+        this._syncPracticePanels();
+        this._updateTip();
+        this._emit();
+      });
+    }
+
+    if (this.els.fridgeFill) {
+      this.els.fridgeFill.value = this.state.fridgeFill;
+      this.els.fridgeFill.addEventListener('change', () => {
+        this.state.fridgeFill = this.els.fridgeFill.value;
+        this._updateTip();
+        this._emit();
+      });
+    }
+
+    const bindPractice = (el, key) => {
+      if (!el) return;
+      el.checked = this.state[key];
+      el.addEventListener('change', () => {
+        this.state[key] = el.checked;
+        this._updateTip();
+        this._emit();
+      });
+    };
+    bindPractice(this.els.practiceCool, 'coolBeforeStore');
+    bindPractice(this.els.practiceSeal, 'doorSealOk');
+    bindPractice(this.els.practiceHeat, 'awayFromHeat');
+    bindPractice(this.els.practiceDoor, 'lessDoorOpen');
+
+    this.els.fanPlacement.forEach((input) => {
+      input.checked = input.value === this.state.fanPlacement;
+      input.addEventListener('change', () => {
+        if (!input.checked) return;
+        this.state.fanPlacement = input.value === 'wrong' ? 'wrong' : 'correct';
+        this._updateTip();
+        this._emit();
+      });
+    });
+
+    this.els.notesToggle?.addEventListener('click', () => {
+      const open = this.els.notesBody?.classList.toggle('open');
+      this.els.notesToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
 
     this.els.allOff.addEventListener('click', () => this.allOff());
 
@@ -145,18 +219,90 @@ export class UI {
     });
   }
 
+  _syncPracticePanels() {
+    if (this.els.fridgePanel) {
+      this.els.fridgePanel.hidden = !this.state.fridgeOn;
+    }
+    if (this.els.fanPanel) {
+      this.els.fanPanel.hidden = !(this.state.fanOn || this.state.acOn);
+    }
+  }
+
   _syncApplianceLabels() {
+    this._refreshDynamicLabels(computeMetrics(this.state));
+  }
+
+  /**
+   * @param {ReturnType<typeof computeMetrics>} m
+   */
+  _refreshDynamicLabels(m) {
     if (this.els.acWattsLabel) {
-      this.els.acWattsLabel.textContent = `約 ${APPLIANCE_WATTS.ac} W`;
+      if (m.acSavePct) {
+        this.els.acWattsLabel.textContent = `約 ${m.acWatts} W（慳 ${m.acSavePct}%）`;
+      } else {
+        this.els.acWattsLabel.textContent = `約 ${APPLIANCE_WATTS.ac} W`;
+      }
     }
     if (this.els.fridgeWattsLabel) {
-      this.els.fridgeWattsLabel.textContent = `約計 ${APPLIANCE_WATTS.fridge} W`;
+      this.els.fridgeWattsLabel.textContent = this.state.fridgeOn
+        ? `約計 ${m.fridgeWatts} W`
+        : `約計 ${APPLIANCE_WATTS.fridge} W`;
+    }
+    if (this.els.fanWattsLabel) {
+      this.els.fanWattsLabel.textContent = `約 ${APPLIANCE_WATTS.fan} W`;
+    }
+
+    if (this.els.fridgeWarn) {
+      if (m.fridgeWarning) {
+        this.els.fridgeWarn.hidden = false;
+        this.els.fridgeWarn.textContent = m.fridgeWarning;
+      } else {
+        this.els.fridgeWarn.hidden = true;
+      }
+    }
+
+    if (this.els.fridgeStatus) {
+      if (m.fridgeAllGood) {
+        this.els.fridgeStatus.textContent = '✓ 收納滿分！雪櫃約計更慳電';
+        this.els.fridgeStatus.className = 'practice-status good';
+      } else {
+        this.els.fridgeStatus.textContent = `已做好 ${m.fridgeGoodCount}/5 項習慣`;
+        this.els.fridgeStatus.className = 'practice-status';
+      }
+    }
+
+    if (this.els.fanSaveBadge) {
+      if (m.acSavePct) {
+        this.els.fanSaveBadge.hidden = false;
+        this.els.fanSaveBadge.textContent = `約慳 ${m.acSavePct}% 冷氣電`;
+      } else {
+        this.els.fanSaveBadge.hidden = true;
+      }
+    }
+
+    if (this.els.fanTipEl) {
+      this.els.fanTipEl.textContent =
+        m.fanTip || '循環扇係冷氣嘅神隊友——擺對位先至更慳電。';
     }
   }
 
   _updateTip() {
+    const m = computeMetrics(this.state);
+
+    if (m.fridgeWarning) {
+      this.els.tip.textContent = m.fridgeWarning;
+      return;
+    }
+    if (m.acSavePct) {
+      this.els.tip.textContent = m.fanTip;
+      return;
+    }
+    if (this.state.fanOn && this.state.fanPlacement === 'wrong') {
+      this.els.tip.textContent = m.fanTip;
+      return;
+    }
     if (this.state.acOn) {
-      this.els.tip.textContent = APPLIANCE_PRESETS.ac.tip;
+      this.els.tip.textContent = m.fanTip || APPLIANCE_PRESETS.ac.tip;
       return;
     }
     if (this.state.type && BULB_PRESETS[this.state.type]) {
@@ -165,6 +311,10 @@ export class UI {
     }
     if (this.state.fridgeOn) {
       this.els.tip.textContent = APPLIANCE_PRESETS.fridge.tip;
+      return;
+    }
+    if (this.state.fanOn) {
+      this.els.tip.textContent = APPLIANCE_PRESETS.fan.tip;
       return;
     }
     this.els.tip.textContent =
@@ -238,6 +388,8 @@ export class UI {
 
   renderMetrics() {
     const m = computeMetrics(this.state);
+    this._refreshDynamicLabels(m);
+
     this.els.mWatts.innerHTML = `${m.watts} <small>W</small>`;
     this.els.mKwh.innerHTML = `${formatKwh(m.kwhMonth)} <small>kWh</small>`;
     this.els.mCost.textContent = formatMoney(m.costMonth);

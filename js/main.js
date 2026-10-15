@@ -66,17 +66,21 @@ scene.add(rim);
 const ui = new UI((state) => {
   const m = computeMetrics(state);
   lights.apply(state.type, state.count, m.lightFactor || 0);
-  appliances.apply({ acOn: state.acOn, fridgeOn: state.fridgeOn });
+  appliances.apply(state);
 
-  // Dim rim when room is lit so bulb dominates
   rim.intensity = state.type ? 0.25 : 1.2;
-
-  // Slight exposure bump when lit
   renderer.toneMappingExposure = state.type ? 1.15 : 0.95;
 });
 
-// Apply default appliance visuals (fridge ON)
-appliances.apply({ acOn: false, fridgeOn: true });
+// Apply default appliance visuals (fridge ON, fan correct placement)
+appliances.apply({
+  acOn: false,
+  fridgeOn: true,
+  fanOn: false,
+  fanPlacement: 'correct',
+  fridgeFill: 'seventy',
+  awayFromHeat: true,
+});
 
 function onResize() {
   const w = window.innerWidth;
@@ -88,9 +92,12 @@ function onResize() {
 }
 window.addEventListener('resize', onResize);
 
+const clock = new THREE.Clock();
 let raf = 0;
 function tick() {
   raf = requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  appliances.update(dt);
   controls.update();
   renderer.render(scene, camera);
 }

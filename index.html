@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="明愛慳電教育 — 喺黑房揀燈種，即時睇光同耗電" />
+    <meta name="theme-color" content="#050508" />
+    <title>慳電英雄｜黑房揀燈 — 明愛教育</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="3D 房間場景"></canvas>
+
+      <!-- Boot / dark-room prompt -->
+      <div id="prompt-overlay" class="prompt-overlay" role="status">
+        <div class="prompt-card">
+          <p class="prompt-kicker">Caritas 明愛 · 慳電教育</p>
+          <h1>選擇燈種，照亮呢間房</h1>
+          <p class="prompt-sub">一開始冇光源——揀 LED、慳電燈或鎢絲燈，即時睇光同耗電。</p>
+        </div>
+      </div>
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <img id="brand-mascot" class="brand-mascot" alt="" hidden />
+            <span class="brand-mark-fallback">⚡</span>
+          </span>
+          <div>
+            <strong>慳電英雄</strong>
+            <span>照明大法師 · 第一回</span>
+          </div>
+        </div>
+        <button type="button" id="btn-all-off" class="btn btn-ghost" title="關掉所有燈">
+          全部關掉
+        </button>
+      </header>
+
+      <!-- Metrics HUD -->
+      <aside class="metrics-panel" aria-live="polite">
+        <div class="metric">
+          <span class="metric-label">總瓦數</span>
+          <span class="metric-value" id="m-watts">0 <small>W</small></span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">每月度數</span>
+          <span class="metric-value" id="m-kwh">0 <small>kWh</small></span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">每月電費</span>
+          <span class="metric-value" id="m-cost">$0</span>
+        </div>
+        <div class="metric metric-save">
+          <span class="metric-label">相對鎢絲慳電</span>
+          <span class="metric-value" id="m-save">—</span>
+        </div>
+      </aside>
+
+      <!-- Control dock -->
+      <aside class="dock" id="dock">
+        <button type="button" class="dock-toggle" id="dock-toggle" aria-expanded="true" aria-controls="dock-body">
+          <span>控制台</span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="dock-body" id="dock-body">
+          <section class="dock-section">
+            <h2>燈種選擇</h2>
+            <div class="bulb-cards" role="radiogroup" aria-label="燈種">
+              <button type="button" class="bulb-card" data-type="led" role="radio" aria-checked="false">
+                <span class="bulb-icon led" aria-hidden="true"></span>
+                <span class="bulb-name">LED</span>
+                <span class="bulb-meta">慳電 · 冷白</span>
+              </button>
+              <button type="button" class="bulb-card" data-type="cfl" role="radio" aria-checked="false">
+                <span class="bulb-icon cfl" aria-hidden="true"></span>
+                <span class="bulb-name">慳電燈</span>
+                <span class="bulb-meta">中等 · 偏冷</span>
+              </button>
+              <button type="button" class="bulb-card" data-type="incandescent" role="radio" aria-checked="false">
+                <span class="bulb-icon inc" aria-hidden="true"></span>
+                <span class="bulb-name">鎢絲燈</span>
+                <span class="bulb-meta">耗電 · 暖黃</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="dock-section">
+            <label class="toggle-row">
+              <input type="checkbox" id="equal-brightness" checked />
+              <span>同等亮度（約 800 流明）</span>
+            </label>
+            <p class="hint" id="equal-hint">LED ≈ 9W · 慳電燈 ≈ 14W · 鎢絲 ≈ 60W</p>
+          </section>
+
+          <section class="dock-section sliders">
+            <label class="slider-row">
+              <span>燈泡數量 <strong id="v-count">1</strong></span>
+              <input type="range" id="s-count" min="1" max="8" step="1" value="1" />
+            </label>
+            <label class="slider-row">
+              <span>每日使用 <strong id="v-hours">4</strong> 小時</span>
+              <input type="range" id="s-hours" min="0.5" max="16" step="0.5" value="4" />
+            </label>
+            <label class="slider-row">
+              <span>電費 <strong id="v-rate">1.20</strong> $/kWh</span>
+              <input type="range" id="s-rate" min="0.8" max="2.5" step="0.05" value="1.2" />
+            </label>
+          </section>
+
+          <section class="dock-section tips">
+            <p id="edu-tip">鎢絲燈九成電力變成熱；換 LED 可慳約 85% 電。</p>
+          </section>
+        </div>
+      </aside>
+
+      <!-- Mascot / badge -->
+      <div class="mascot-wrap" id="mascot-wrap">
+        <img id="mascot-img" alt="慳電英雄吉祥物" hidden />
+        <div id="mascot-badge" class="mascot-badge" aria-hidden="false">
+          <svg viewBox="0 0 64 64" width="48" height="48" aria-hidden="true">
+            <circle cx="32" cy="32" r="30" fill="#1a3a2a" stroke="#3dd68c" stroke-width="2" />
+            <path d="M28 18 L36 18 L34 30 L42 30 L26 48 L30 34 L22 34 Z" fill="#ffe566" />
+          </svg>
+          <span>慳電英雄</span>
+        </div>
+      </div>
+
+      <footer class="credit">明愛 Caritas · 慳電教育互動體驗</footer>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

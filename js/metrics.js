@@ -1,6 +1,7 @@
 /**
- * Energy / cost calculations for bulb comparisons.
+ * Energy / cost calculations for bulb + appliance comparisons.
  * Equal-brightness presets ≈ 800 lm household bulb.
+ * Appliance watts are teaching estimates (約計), HK-ish.
  */
 
 /** @typedef {'led' | 'cfl' | 'incandescent'} BulbType */
@@ -42,6 +43,12 @@ export const BULB_PRESETS = {
 /** When「同等亮度」off — same wattage each, LED looks much brighter */
 export const SAME_WATT = 60;
 
+/** Teaching defaults for home appliances (約計) */
+export const APPLIANCE_WATTS = {
+  ac: 900,
+  fridge: 120,
+};
+
 /**
  * @param {object} opts
  * @param {BulbType | null} opts.type
@@ -49,6 +56,8 @@ export const SAME_WATT = 60;
  * @param {number} opts.hoursPerDay
  * @param {number} opts.ratePerKwh
  * @param {boolean} opts.equalBrightness
+ * @param {boolean} [opts.acOn]
+ * @param {boolean} [opts.fridgeOn]
  */
 export function computeMetrics({
   type,
@@ -56,41 +65,58 @@ export function computeMetrics({
   hoursPerDay,
   ratePerKwh,
   equalBrightness,
+  acOn = false,
+  fridgeOn = false,
 }) {
-  if (!type || count <= 0) {
-    return {
-      watts: 0,
-      kwhMonth: 0,
-      costMonth: 0,
-      savePct: null,
-      wattsEach: 0,
-      lightFactor: 0,
-    };
+  let lightWatts = 0;
+  let wattsEach = 0;
+  let lightFactor = 0;
+  let savePct = null;
+
+  if (type && count > 0) {
+    wattsEach = equalBrightness ? BULB_PRESETS[type].equalW : SAME_WATT;
+    lightWatts = wattsEach * count;
+
+    const incEach = BULB_PRESETS.incandescent.equalW;
+    const incTotal = incEach * count;
+    savePct = equalBrightness
+      ? type === 'incandescent'
+        ? 0
+        : Math.round(((incTotal - lightWatts) / incTotal) * 100)
+      : null;
+
+    lightFactor = equalBrightness
+      ? BULB_PRESETS[type].intensityScale
+      : (wattsEach / BULB_PRESETS.led.equalW) *
+        (BULB_PRESETS[type].lpw / BULB_PRESETS.led.lpw) *
+        BULB_PRESETS[type].intensityScale;
   }
 
-  const wattsEach = equalBrightness
-    ? BULB_PRESETS[type].equalW
-    : SAME_WATT;
-  const watts = wattsEach * count;
-  const kwhMonth = (watts * hoursPerDay * 30) / 1000;
+  const acWatts = acOn ? APPLIANCE_WATTS.ac : 0;
+  const fridgeWatts = fridgeOn ? APPLIANCE_WATTS.fridge : 0;
+  const applianceWatts = acWatts + fridgeWatts;
+
+  const watts = lightWatts + applianceWatts;
+
+  // Lighting & AC follow the hours slider; fridge is 24h when on
+  const lightKwh = (lightWatts * hoursPerDay * 30) / 1000;
+  const acKwh = (acWatts * hoursPerDay * 30) / 1000;
+  const fridgeKwh = (fridgeWatts * 24 * 30) / 1000;
+  const kwhMonth = lightKwh + acKwh + fridgeKwh;
   const costMonth = kwhMonth * ratePerKwh;
 
-  const incEach = BULB_PRESETS.incandescent.equalW;
-  const incTotal = incEach * count;
-  const savePct = equalBrightness
-    ? type === 'incandescent'
-      ? 0
-      : Math.round(((incTotal - watts) / incTotal) * 100)
-    : null;
-
-  // Visual brightness factor for Three.js (relative to equal-brightness LED)
-  const lightFactor = equalBrightness
-    ? BULB_PRESETS[type].intensityScale
-    : (wattsEach / BULB_PRESETS.led.equalW) *
-      (BULB_PRESETS[type].lpw / BULB_PRESETS.led.lpw) *
-      BULB_PRESETS[type].intensityScale;
-
-  return { watts, kwhMonth, costMonth, savePct, wattsEach, lightFactor };
+  return {
+    watts,
+    lightWatts,
+    applianceWatts,
+    acWatts,
+    fridgeWatts,
+    kwhMonth,
+    costMonth,
+    savePct,
+    wattsEach,
+    lightFactor,
+  };
 }
 
 export function formatMoney(n) {

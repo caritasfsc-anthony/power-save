@@ -295,7 +295,7 @@ body {
 
 .dock-body {
   padding: 0 0.9rem 0.95rem;
-  max-height: min(52vh, 420px);
+  max-height: min(58vh, 520px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -610,5 +610,119 @@ body {
   .bulb-card,
   .dock-toggle .chev {
     transition: none;
+  }
+}
+
+/* —— Appliance toggles —— */
+.appliance-toggles {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.appliance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.appliance-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.appliance-toggle:has(input:checked) {
+  border-color: rgba(61, 214, 140, 0.55);
+  background: var(--accent-dim);
+}
+
+.appliance-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.appliance-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.appliance-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.appliance-meta {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.appliance-toggle .switch {
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.appliance-toggle .switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #c5cad6;
+  transform: translateY(-50%);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.appliance-toggle input:checked + .appliance-info + .switch {
+  background: rgba(61, 214, 140, 0.35);
+  border-color: var(--accent);
+}
+
+.appliance-toggle input:checked + .appliance-info + .switch::after {
+  transform: translate(1.05rem, -50%);
+  background: var(--accent);
+}
+
+.appliance-toggle input:focus-visible + .appliance-info + .switch {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 719px) {
+  .appliance-toggle {
+    padding: 0.6rem 0.7rem;
+    min-height: 2.75rem;
+  }
+
+  .appliance-toggle .switch {
+    width: 2.6rem;
+    height: 1.45rem;
+  }
+
+  .appliance-toggle .switch::after {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .appliance-toggle input:checked + .appliance-info + .switch::after {
+    transform: translate(1.15rem, -50%);
   }
 }

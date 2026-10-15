@@ -1,9 +1,11 @@
 import {
   BULB_PRESETS,
+  APPLIANCE_WATTS,
   computeMetrics,
   formatMoney,
   formatKwh,
 } from './metrics.js';
+import { APPLIANCE_PRESETS } from './appliances.js';
 
 /**
  * Overlay UI bindings. Calls onChange whenever state updates.
@@ -21,6 +23,8 @@ export class UI {
       hoursPerDay: 4,
       ratePerKwh: 1.41,
       equalBrightness: true,
+      acOn: false,
+      fridgeOn: true,
     };
 
     this.els = {
@@ -47,10 +51,15 @@ export class UI {
       dockToggle: document.getElementById('dock-toggle'),
       mascotImg: document.getElementById('mascot-img'),
       mascotBadge: document.getElementById('mascot-badge'),
+      acToggle: document.getElementById('toggle-ac'),
+      fridgeToggle: document.getElementById('toggle-fridge'),
+      acWattsLabel: document.getElementById('ac-watts-label'),
+      fridgeWattsLabel: document.getElementById('fridge-watts-label'),
     };
 
     this._bind();
     this._setupMascot();
+    this._syncApplianceLabels();
     this.renderMetrics();
   }
 
@@ -63,8 +72,7 @@ export class UI {
           c.setAttribute('aria-checked', c === card ? 'true' : 'false');
         });
         this.els.prompt?.classList.add('hidden');
-        const tip = BULB_PRESETS[type]?.tip;
-        if (tip) this.els.tip.textContent = tip;
+        this._updateTip();
         this._emit();
       });
     });
@@ -108,6 +116,24 @@ export class UI {
     this.els.rateHke?.addEventListener('click', () => applyRatePreset(1.63));
     this._syncRateChips();
 
+    if (this.els.acToggle) {
+      this.els.acToggle.checked = this.state.acOn;
+      this.els.acToggle.addEventListener('change', () => {
+        this.state.acOn = this.els.acToggle.checked;
+        this._updateTip();
+        this._emit();
+      });
+    }
+
+    if (this.els.fridgeToggle) {
+      this.els.fridgeToggle.checked = this.state.fridgeOn;
+      this.els.fridgeToggle.addEventListener('change', () => {
+        this.state.fridgeOn = this.els.fridgeToggle.checked;
+        this._updateTip();
+        this._emit();
+      });
+    }
+
     this.els.allOff.addEventListener('click', () => this.allOff());
 
     this.els.dockToggle.addEventListener('click', () => {
@@ -117,6 +143,32 @@ export class UI {
         collapsed ? 'false' : 'true'
       );
     });
+  }
+
+  _syncApplianceLabels() {
+    if (this.els.acWattsLabel) {
+      this.els.acWattsLabel.textContent = `約 ${APPLIANCE_WATTS.ac} W`;
+    }
+    if (this.els.fridgeWattsLabel) {
+      this.els.fridgeWattsLabel.textContent = `約計 ${APPLIANCE_WATTS.fridge} W`;
+    }
+  }
+
+  _updateTip() {
+    if (this.state.acOn) {
+      this.els.tip.textContent = APPLIANCE_PRESETS.ac.tip;
+      return;
+    }
+    if (this.state.type && BULB_PRESETS[this.state.type]) {
+      this.els.tip.textContent = BULB_PRESETS[this.state.type].tip;
+      return;
+    }
+    if (this.state.fridgeOn) {
+      this.els.tip.textContent = APPLIANCE_PRESETS.fridge.tip;
+      return;
+    }
+    this.els.tip.textContent =
+      '鎢絲燈九成電力變成熱；換 LED 可慳約 85% 電。';
   }
 
   _setupMascot() {
@@ -157,7 +209,6 @@ export class UI {
     img.addEventListener('error', showBadge);
     img.addEventListener('load', showMascot);
 
-    // Set src after listeners so GitHub Pages base path is respected
     img.src = src;
 
     if (img.complete) {
@@ -176,8 +227,7 @@ export class UI {
     this.state.type = null;
     this.els.cards.forEach((c) => c.setAttribute('aria-checked', 'false'));
     this.els.prompt?.classList.remove('hidden');
-    this.els.tip.textContent =
-      '鎢絲燈九成電力變成熱；換 LED 可慳約 85% 電。';
+    this._updateTip();
     this._emit();
   }
 

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Room } from './room.js';
 import { RoomLights } from './lights.js';
+import { Appliances } from './appliances.js';
 import { UI } from './ui.js';
 import { computeMetrics } from './metrics.js';
 
@@ -55,6 +56,7 @@ const lights = new RoomLights(
   room.deskAnchor,
   room.bulbMesh
 );
+const appliances = new Appliances(room);
 
 // Very faint rim so user sees silhouette before choosing a bulb
 const rim = new THREE.PointLight(0x334466, 1.2, 14, 2);
@@ -64,6 +66,7 @@ scene.add(rim);
 const ui = new UI((state) => {
   const m = computeMetrics(state);
   lights.apply(state.type, state.count, m.lightFactor || 0);
+  appliances.apply({ acOn: state.acOn, fridgeOn: state.fridgeOn });
 
   // Dim rim when room is lit so bulb dominates
   rim.intensity = state.type ? 0.25 : 1.2;
@@ -71,6 +74,9 @@ const ui = new UI((state) => {
   // Slight exposure bump when lit
   renderer.toneMappingExposure = state.type ? 1.15 : 0.95;
 });
+
+// Apply default appliance visuals (fridge ON)
+appliances.apply({ acOn: false, fridgeOn: true });
 
 function onResize() {
   const w = window.innerWidth;
@@ -90,7 +96,6 @@ function tick() {
 }
 tick();
 
-// Clean up on HMR / unload
 window.addEventListener('beforeunload', () => {
   cancelAnimationFrame(raf);
   controls.dispose();
@@ -99,7 +104,6 @@ window.addEventListener('beforeunload', () => {
   renderer.dispose();
 });
 
-// Expose for debugging in local preview
 if (import.meta.env.DEV) {
-  window.__powerSave = { scene, camera, room, lights, ui };
+  window.__powerSave = { scene, camera, room, lights, appliances, ui };
 }

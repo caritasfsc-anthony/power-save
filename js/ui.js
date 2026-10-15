@@ -19,7 +19,7 @@ export class UI {
       type: /** @type {null | string} */ (null),
       count: 1,
       hoursPerDay: 4,
-      ratePerKwh: 1.2,
+      ratePerKwh: 1.41,
       equalBrightness: true,
     };
 
@@ -34,6 +34,8 @@ export class UI {
       vCount: document.getElementById('v-count'),
       vHours: document.getElementById('v-hours'),
       vRate: document.getElementById('v-rate'),
+      rateClp: document.getElementById('rate-clp'),
+      rateHke: document.getElementById('rate-hke'),
       mWatts: document.getElementById('m-watts'),
       mKwh: document.getElementById('m-kwh'),
       mCost: document.getElementById('m-cost'),
@@ -90,8 +92,21 @@ export class UI {
     this.els.rate.addEventListener('input', () => {
       this.state.ratePerKwh = Number(this.els.rate.value);
       this.els.vRate.textContent = this.state.ratePerKwh.toFixed(2);
+      this._syncRateChips();
       this._emit();
     });
+
+    const applyRatePreset = (rate) => {
+      this.state.ratePerKwh = rate;
+      this.els.rate.value = String(rate);
+      this.els.vRate.textContent = rate.toFixed(2);
+      this._syncRateChips();
+      this._emit();
+    };
+
+    this.els.rateClp?.addEventListener('click', () => applyRatePreset(1.41));
+    this.els.rateHke?.addEventListener('click', () => applyRatePreset(1.63));
+    this._syncRateChips();
 
     this.els.allOff.addEventListener('click', () => this.allOff());
 
@@ -149,6 +164,12 @@ export class UI {
       if (img.naturalWidth === 0) showBadge();
       else showMascot();
     }
+  }
+
+  _syncRateChips() {
+    const r = Number(this.state.ratePerKwh.toFixed(2));
+    this.els.rateClp?.classList.toggle('active', r === 1.41);
+    this.els.rateHke?.classList.toggle('active', r === 1.63);
   }
 
   allOff() {

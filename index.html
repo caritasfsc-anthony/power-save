@@ -111,9 +111,14 @@
               <input type="range" id="s-hours" min="0.5" max="16" step="0.5" value="4" />
             </label>
             <label class="slider-row">
-              <span>電費 <strong id="v-rate">1.20</strong> $/kWh</span>
-              <input type="range" id="s-rate" min="0.8" max="2.5" step="0.05" value="1.2" />
+              <span>電費 <strong id="v-rate">1.41</strong> HK$/度</span>
+              <input type="range" id="s-rate" min="1.0" max="2.5" step="0.01" value="1.41" />
             </label>
+            <div class="rate-presets" role="group" aria-label="香港電費預設">
+              <button type="button" class="rate-chip" id="rate-clp" data-rate="1.41">中電約 $1.41</button>
+              <button type="button" class="rate-chip" id="rate-hke" data-rate="1.63">港燈約 $1.63</button>
+            </div>
+            <p class="hint rate-hint">約計（2026 平均淨電價）；實際賬單按級別同燃調變動</p>
           </section>
 
           <section class="dock-section tips">

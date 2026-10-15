@@ -452,6 +452,41 @@ body {
   cursor: pointer;
 }
 
+.rate-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.rate-chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.rate-chip:hover {
+  border-color: rgba(61, 214, 140, 0.45);
+  color: var(--text);
+}
+
+.rate-chip.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rate-hint {
+  margin-top: 0.2rem;
+}
+
 .tips p {
   margin: 0;
   padding: 0.65rem 0.75rem;

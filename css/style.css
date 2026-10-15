@@ -199,12 +199,14 @@ body {
 /* —— Metrics —— */
 .metrics-panel {
   position: absolute;
-  top: calc(4.2rem + var(--safe-t));
+  top: calc(7.6rem + var(--safe-t));
   right: 0.75rem;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.4rem;
   z-index: 10;
   min-width: 148px;
+  max-height: calc(100vh - 10rem);
+  overflow-y: auto;
 }
 
 .metric {
@@ -1005,5 +1007,206 @@ body {
 
   .select-row select {
     max-width: none;
+  }
+}
+
+
+/* —— Time play bar —— */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.time-bar {
+  position: absolute;
+  top: calc(3.55rem + var(--safe-t));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 1.5rem));
+  z-index: 12;
+  padding: 0.55rem 0.75rem 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+}
+
+.time-bar-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+}
+
+.time-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 7.5rem;
+}
+
+.time-day {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.time-clock strong {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.time-phase {
+  font-size: 0.7rem;
+  color: var(--warm);
+  font-weight: 600;
+}
+
+.time-slider-wrap {
+  flex: 1 1 140px;
+  min-width: 120px;
+}
+
+.time-slider-wrap input[type="range"] {
+  width: 100%;
+  accent-color: var(--warm);
+}
+
+.time-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.time-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.time-btn:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.time-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.time-btn-text {
+  width: auto;
+  padding: 0 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.speed-group {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.speed-chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.3rem 0.45rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.speed-chip.active {
+  color: var(--text);
+  border-color: var(--warm);
+  background: rgba(255, 179, 71, 0.15);
+}
+
+.time-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.time-progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.time-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--warm));
+  transition: width 0.2s ease;
+}
+
+.metric-spark {
+  padding-bottom: 0.4rem;
+}
+
+.metric-spark canvas {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 719px) {
+  .time-bar {
+    top: calc(3.4rem + var(--safe-t));
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    transform: none;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .metrics-panel {
+    top: calc(9.8rem + var(--safe-t));
+    right: 0.5rem;
+    min-width: 132px;
+  }
+
+  .time-clock strong {
+    font-size: 1rem;
+  }
+
+  .time-btn-text {
+    font-size: 0.65rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .time-bar {
+    left: 50%;
   }
 }

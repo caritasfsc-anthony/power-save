@@ -4,10 +4,11 @@ import { Room } from './room.js';
 import { RoomLights } from './lights.js';
 import { Appliances } from './appliances.js';
 import { UI } from './ui.js';
-import { computeMetrics } from './metrics.js';
+import { computeMetrics, computeInstantWatts } from './metrics.js';
+import { DayCycle } from './daycycle.js';
 
 /**
- * 慳電英雄 — Three.js dark-room experience
+ * 慳電英雄 — Three.js room with day-cycle time play
  */
 
 const canvas = document.getElementById('scene');
@@ -28,51 +29,74 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setClearColor(0x030306, 1);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x030306, 0.035);
+scene.fog = new THREE.FogExp2(0x030306, 0.028);
 
 const camera = new THREE.PerspectiveCamera(
   50,
   window.innerWidth / window.innerHeight,
   0.1,
-  60
+  80
 );
-camera.position.set(2.8, 1.75, 4.2);
+camera.position.set(3.2, 1.85, 3.6);
 
 const controls = new OrbitControls(camera, canvas);
-controls.target.set(0.2, 1.2, -0.5);
+controls.target.set(0.1, 1.35, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
-controls.minDistance = 2.2;
-controls.maxDistance = 7.5;
+controls.minDistance = 2.4;
+controls.maxDistance = 8.5;
 controls.maxPolarAngle = Math.PI * 0.48;
-controls.minPolarAngle = 0.2;
+controls.minPolarAngle = 0.15;
 controls.enablePan = false;
 controls.update();
 
 const room = new Room(scene);
+const winPos = room.windowPos
+  ? new THREE.Vector3(room.windowPos.x, room.windowPos.y, room.windowPos.z)
+  : null;
 const lights = new RoomLights(
   scene,
   room.ceilingAnchor,
   room.deskAnchor,
-  room.bulbMesh
+  room.bulbMesh,
+  room.size,
+  winPos
 );
 const appliances = new Appliances(room);
+const dayCycle = new DayCycle();
 
-// Very faint rim so user sees silhouette before choosing a bulb
-const rim = new THREE.PointLight(0x334466, 1.2, 14, 2);
-rim.position.set(-2.5, 2.4, 2);
+const rim = new THREE.PointLight(0x334466, 1.0, 14, 2);
+rim.position.set(2.2, 2.4, 2);
 scene.add(rim);
 
-const ui = new UI((state) => {
+/** @type {UI | null} */
+let ui = null;
+
+function syncDaylight() {
+  const pal = dayCycle.getPalette();
+  room.setDaylight(pal);
+  lights.applyDaylight(pal);
+  if (scene.fog) {
+    scene.fog.color.copy(pal.fog);
+    scene.fog.density =
+      pal.phase === 'day' ? 0.012 : pal.phase === 'night' ? 0.032 : 0.02;
+  }
+  renderer.setClearColor(pal.fog.getHex(), 1);
+  const bulbsOn = !!ui?.state?.type;
+  renderer.toneMappingExposure = bulbsOn
+    ? Math.max(pal.exposure, 1.05)
+    : pal.exposure;
+  rim.intensity = bulbsOn ? 0.15 : pal.phase === 'night' ? 1.0 : 0.2;
+}
+
+ui = new UI((state) => {
   const m = computeMetrics(state);
   lights.apply(state.type, state.count, m.lightFactor || 0);
   appliances.apply(state);
+  syncDaylight();
+  ui.renderSimStats(dayCycle, state.ratePerKwh);
+}, dayCycle);
 
-  rim.intensity = state.type ? 0.25 : 1.2;
-  renderer.toneMappingExposure = state.type ? 1.15 : 0.95;
-});
-
-// Apply default appliance visuals (fridge ON, fan correct placement)
 appliances.apply({
   acOn: false,
   fridgeOn: true,
@@ -81,6 +105,9 @@ appliances.apply({
   fridgeFill: 'seventy',
   awayFromHeat: true,
 });
+
+syncDaylight();
+ui.renderSimStats(dayCycle, ui.state.ratePerKwh);
 
 function onResize() {
   const w = window.innerWidth;
@@ -94,10 +121,26 @@ window.addEventListener('resize', onResize);
 
 const clock = new THREE.Clock();
 let raf = 0;
+let lastUiSync = 0;
 function tick() {
   raf = requestAnimationFrame(tick);
   const dt = Math.min(clock.getDelta(), 0.05);
   appliances.update(dt);
+
+  const watts = computeInstantWatts(ui.state);
+  const wasPlaying = dayCycle.playing;
+  dayCycle.tick(dt, watts);
+
+  if (wasPlaying || dayCycle.playing) {
+    syncDaylight();
+    lastUiSync += dt;
+    if (lastUiSync > 0.1) {
+      lastUiSync = 0;
+      ui.renderTimeControls(dayCycle);
+      ui.renderSimStats(dayCycle, ui.state.ratePerKwh);
+    }
+  }
+
   controls.update();
   renderer.render(scene, camera);
 }
@@ -112,5 +155,5 @@ window.addEventListener('beforeunload', () => {
 });
 
 if (import.meta.env.DEV) {
-  window.__powerSave = { scene, camera, room, lights, appliances, ui };
+  window.__powerSave = { scene, camera, room, lights, appliances, ui, dayCycle };
 }

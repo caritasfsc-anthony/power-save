@@ -13,9 +13,11 @@ import { APPLIANCE_PRESETS } from './appliances.js';
 export class UI {
   /**
    * @param {(state: object) => void} onChange
+   * @param {import('./daycycle.js').DayCycle} [dayCycle]
    */
-  constructor(onChange) {
+  constructor(onChange, dayCycle = null) {
     this.onChange = onChange;
+    this.dayCycle = dayCycle;
 
     this.state = {
       type: /** @type {null | string} */ (null),
@@ -48,6 +50,7 @@ export class UI {
       rateClp: document.getElementById('rate-clp'),
       rateHke: document.getElementById('rate-hke'),
       mWatts: document.getElementById('m-watts'),
+      mToday: document.getElementById('m-today'),
       mKwh: document.getElementById('m-kwh'),
       mCost: document.getElementById('m-cost'),
       mSave: document.getElementById('m-save'),
@@ -78,13 +81,131 @@ export class UI {
       practiceDoor: document.getElementById('practice-door'),
       notesToggle: document.getElementById('notes-toggle'),
       notesBody: document.getElementById('notes-body'),
+      sTime: document.getElementById('s-time'),
+      tClock: document.getElementById('t-clock'),
+      tDay: document.getElementById('t-day'),
+      tPhase: document.getElementById('t-phase'),
+      btnPlay: document.getElementById('btn-play'),
+      btnNextDay: document.getElementById('btn-next-day'),
+      btnResetMonth: document.getElementById('btn-reset-month'),
+      speedChips: [...document.querySelectorAll('.speed-chip')],
+      monthFill: document.getElementById('t-month-fill'),
+      monthLabel: document.getElementById('t-month-label'),
+      spark: document.getElementById('spark-canvas'),
     };
 
     this._bind();
+    this._bindTime();
     this._setupMascot();
     this._syncApplianceLabels();
     this._syncPracticePanels();
     this.renderMetrics();
+    if (this.dayCycle) this.renderTimeControls(this.dayCycle);
+  }
+
+  _bindTime() {
+    if (!this.dayCycle) return;
+    const dc = this.dayCycle;
+
+    this.els.sTime?.addEventListener('input', () => {
+      const h = Number(this.els.sTime.value);
+      dc.setTime(h);
+      this.renderTimeControls(dc);
+      this.onChange({ ...this.state });
+    });
+
+    this.els.btnPlay?.addEventListener('click', () => {
+      dc.playing = !dc.playing;
+      this.renderTimeControls(dc);
+    });
+
+    this.els.speedChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        dc.speed = Number(chip.dataset.speed) || 1;
+        this.els.speedChips.forEach((c) =>
+          c.classList.toggle('active', c === chip)
+        );
+      });
+    });
+
+    this.els.btnNextDay?.addEventListener('click', () => {
+      dc.advanceDay();
+      this.renderTimeControls(dc);
+      this.renderSimStats(dc, this.state.ratePerKwh);
+      this.onChange({ ...this.state });
+    });
+
+    this.els.btnResetMonth?.addEventListener('click', () => {
+      dc.resetMonth();
+      this.renderTimeControls(dc);
+      this.renderSimStats(dc, this.state.ratePerKwh);
+      this.onChange({ ...this.state });
+    });
+  }
+
+  /**
+   * @param {import('./daycycle.js').DayCycle} dc
+   */
+  renderTimeControls(dc) {
+    if (this.els.tClock) this.els.tClock.textContent = dc.formatClock();
+    if (this.els.tDay) this.els.tDay.textContent = `第 ${dc.dayOfMonth} 日`;
+    if (this.els.tPhase) this.els.tPhase.textContent = dc.phaseLabel();
+    if (this.els.sTime && document.activeElement !== this.els.sTime) {
+      this.els.sTime.value = String(dc.timeOfDay);
+    }
+    if (this.els.sTime) {
+      this.els.sTime.setAttribute('aria-valuetext', dc.formatClock());
+    }
+    if (this.els.btnPlay) {
+      this.els.btnPlay.textContent = dc.playing ? '⏸' : '▶';
+      this.els.btnPlay.setAttribute('aria-pressed', dc.playing ? 'true' : 'false');
+      this.els.btnPlay.title = dc.playing ? '暫停' : '播放';
+    }
+    const pct = (dc.dayOfMonth / dc.daysInMonth) * 100;
+    if (this.els.monthFill) this.els.monthFill.style.width = `${pct}%`;
+    if (this.els.monthLabel) {
+      this.els.monthLabel.textContent = `${dc.dayOfMonth}／${dc.daysInMonth}`;
+    }
+  }
+
+  /**
+   * @param {import('./daycycle.js').DayCycle} dc
+   * @param {number} rate
+   */
+  renderSimStats(dc, rate) {
+    if (this.els.mToday) {
+      this.els.mToday.innerHTML = `${formatKwh(dc.todayKwh)} <small>kWh</small>`;
+    }
+    if (this.els.mKwh) {
+      this.els.mKwh.innerHTML = `${formatKwh(dc.monthKwh)} <small>kWh</small>`;
+    }
+    if (this.els.mCost) {
+      this.els.mCost.textContent = formatMoney(dc.monthKwh * rate);
+    }
+    this._drawSpark(dc.dailyKwh);
+  }
+
+  /**
+   * @param {number[]} daily
+   */
+  _drawSpark(daily) {
+    const canvas = this.els.spark;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const max = Math.max(0.001, ...daily);
+    const n = daily.length;
+    const gap = 1;
+    const barW = Math.max(1, (w - gap * (n - 1)) / n);
+    daily.forEach((v, i) => {
+      const bh = Math.max(v > 0 ? 2 : 0, (v / max) * (h - 2));
+      const x = i * (barW + gap);
+      ctx.fillStyle = v > 0 ? 'rgba(61, 214, 140, 0.85)' : 'rgba(255,255,255,0.08)';
+      ctx.fillRect(x, h - bh, barW, bh || 1);
+    });
   }
 
   _bind() {
@@ -126,6 +247,7 @@ export class UI {
       this.els.vRate.textContent = this.state.ratePerKwh.toFixed(2);
       this._syncRateChips();
       this._emit();
+      if (this.dayCycle) this.renderSimStats(this.dayCycle, this.state.ratePerKwh);
     });
 
     const applyRatePreset = (rate) => {
@@ -134,6 +256,7 @@ export class UI {
       this.els.vRate.textContent = rate.toFixed(2);
       this._syncRateChips();
       this._emit();
+      if (this.dayCycle) this.renderSimStats(this.dayCycle, this.state.ratePerKwh);
     };
 
     this.els.rateClp?.addEventListener('click', () => applyRatePreset(1.41));
@@ -318,7 +441,7 @@ export class UI {
       return;
     }
     this.els.tip.textContent =
-      '鎢絲燈九成電力變成熱；換 LED 可慳約 85% 電。';
+      '拖動時刻或按播放，睇窗口日出日落；開着嘅電器會累積本月度數。';
   }
 
   _setupMascot() {
@@ -391,8 +514,12 @@ export class UI {
     this._refreshDynamicLabels(m);
 
     this.els.mWatts.innerHTML = `${m.watts} <small>W</small>`;
-    this.els.mKwh.innerHTML = `${formatKwh(m.kwhMonth)} <small>kWh</small>`;
-    this.els.mCost.textContent = formatMoney(m.costMonth);
+
+    // Keep projected estimate only in dock tip; HUD month fields driven by sim
+    if (!this.dayCycle) {
+      this.els.mKwh.innerHTML = `${formatKwh(m.kwhMonth)} <small>kWh</small>`;
+      this.els.mCost.textContent = formatMoney(m.costMonth);
+    }
 
     if (this.els.mSaveLabel) {
       this.els.mSaveLabel.textContent = this.state.equalBrightness

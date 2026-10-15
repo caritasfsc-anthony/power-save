@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="明愛慳電教育 — 黑房揀燈、冷氣＋循環扇、雪櫃收納，即時睇光同耗電" />
+    <meta name="description" content="明愛慳電教育 — 窗口牆房間、日出日落時間播放、冷氣循環扇雪櫃慳電體驗" />
     <meta name="theme-color" content="#050508" />
-    <title>慳電英雄｜黑房揀燈 — 明愛教育</title>
+    <title>慳電英雄｜窗口時光 — 明愛教育</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -23,7 +23,7 @@
         <div class="prompt-card">
           <p class="prompt-kicker">Caritas 明愛 · 慳電教育</p>
           <h1>選擇燈種，照亮呢間房</h1>
-          <p class="prompt-sub">一開始冇光源——揀燈種，再開冷氣／循環扇／雪櫃，玩收納同擺位慳電。</p>
+          <p class="prompt-sub">窗口有日出日落——揀燈種，再開冷氣／循環扇／雪櫃，用時間播放睇成個月用電。</p>
         </div>
       </div>
 
@@ -36,7 +36,7 @@
           </span>
           <div>
             <strong>慳電英雄</strong>
-            <span>照明 · 冷氣循環 · 雪櫃收納</span>
+            <span>窗口時光 · 冷氣循環 · 雪櫃收納</span>
           </div>
         </div>
         <button type="button" id="btn-all-off" class="btn btn-ghost" title="關掉所有燈">
@@ -44,23 +44,63 @@
         </button>
       </header>
 
+      <!-- Time play bar -->
+      <div class="time-bar" id="time-bar" role="region" aria-label="時間播放">
+        <div class="time-bar-main">
+          <div class="time-clock">
+            <span class="time-day" id="t-day">第 1 日</span>
+            <strong id="t-clock">07:00</strong>
+            <span class="time-phase" id="t-phase">日間</span>
+          </div>
+          <label class="time-slider-wrap">
+            <span class="sr-only">時刻</span>
+            <input type="range" id="s-time" min="0" max="24" step="0.05" value="7" aria-valuetext="07:00" />
+          </label>
+          <div class="time-controls">
+            <button type="button" class="time-btn" id="btn-play" title="播放／暫停" aria-pressed="false">▶</button>
+            <div class="speed-group" role="group" aria-label="加速">
+              <button type="button" class="speed-chip active" data-speed="1">1x</button>
+              <button type="button" class="speed-chip" data-speed="10">10x</button>
+              <button type="button" class="speed-chip" data-speed="60">60x</button>
+            </div>
+            <button type="button" class="time-btn time-btn-text" id="btn-next-day" title="前進一日">＋一日</button>
+            <button type="button" class="time-btn time-btn-text" id="btn-reset-month" title="重置本月累積">重置本月</button>
+          </div>
+        </div>
+        <div class="time-progress">
+          <span>本月進度</span>
+          <div class="time-progress-track" aria-hidden="true">
+            <div class="time-progress-fill" id="t-month-fill" style="width:3.3%"></div>
+          </div>
+          <span id="t-month-label">1／30</span>
+        </div>
+      </div>
+
       <!-- Metrics HUD -->
       <aside class="metrics-panel" aria-live="polite">
         <div class="metric">
-          <span class="metric-label">總瓦數</span>
+          <span class="metric-label">即時總瓦數</span>
           <span class="metric-value" id="m-watts">0 <small>W</small></span>
         </div>
         <div class="metric">
-          <span class="metric-label">每月度數</span>
+          <span class="metric-label">今日度數</span>
+          <span class="metric-value" id="m-today">0 <small>kWh</small></span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">本月累積度數</span>
           <span class="metric-value" id="m-kwh">0 <small>kWh</small></span>
         </div>
         <div class="metric">
-          <span class="metric-label">每月電費</span>
+          <span class="metric-label">本月電費</span>
           <span class="metric-value" id="m-cost">$0</span>
         </div>
         <div class="metric metric-save">
           <span class="metric-label">相對鎢絲慳電</span>
           <span class="metric-value" id="m-save">—</span>
+        </div>
+        <div class="metric metric-spark" id="spark-wrap">
+          <span class="metric-label">本月每日用電</span>
+          <canvas id="spark-canvas" width="140" height="36" aria-hidden="true"></canvas>
         </div>
       </aside>
 
@@ -121,7 +161,7 @@
                 <span class="switch" aria-hidden="true"></span>
               </label>
             </div>
-            <p class="hint">冷氣／循環扇跟每日時數；雪櫃開着時按全日約計</p>
+            <p class="hint">時間播放時：開着嘅電器會即時累積度數；雪櫃全日都計</p>
           </section>
 
           <section class="dock-section practice-panel" id="fan-practice-panel" hidden>
@@ -224,9 +264,10 @@
               <input type="range" id="s-count" min="1" max="8" step="1" value="1" />
             </label>
             <label class="slider-row">
-              <span>每日使用 <strong id="v-hours">4</strong> 小時</span>
+              <span>預估每日使用 <strong id="v-hours">4</strong> 小時</span>
               <input type="range" id="s-hours" min="0.5" max="16" step="0.5" value="4" />
             </label>
+            <p class="hint">預估只供參考；實際累積以時間播放為準</p>
             <label class="slider-row">
               <span>電費 <strong id="v-rate">1.41</strong> HK$/度</span>
               <input type="range" id="s-rate" min="1.0" max="2.5" step="0.01" value="1.41" />
@@ -239,7 +280,7 @@
           </section>
 
           <section class="dock-section tips">
-            <p id="edu-tip">鎢絲燈九成電力變成熱；換 LED 可慳約 85% 電。</p>
+            <p id="edu-tip">拖動時刻或按播放，睇窗口日出日落；開着嘅電器會累積本月度數。</p>
           </section>
         </div>
       </aside>

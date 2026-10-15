@@ -116,12 +116,7 @@ export class Room {
       wallMatB,
       { pos: new THREE.Vector3(0, H / 2, D / 2), rot: { y: Math.PI }, cast: false }
     );
-    // Left
-    this._mesh(
-      new THREE.PlaneGeometry(D, H),
-      wallMatB,
-      { pos: new THREE.Vector3(-W / 2, H / 2, 0), rot: { y: Math.PI / 2 }, cast: false }
-    );
+    // Left wall omitted — full window wall built in _buildWindow()
     // Right
     this._mesh(
       new THREE.PlaneGeometry(D, H),
@@ -139,62 +134,211 @@ export class Room {
 
   _buildWindow() {
     const { W, D, H } = this.size;
-    // Window on left wall — upper pane; lower opening reserved for window AC
-    const frameMat = std(0x2a2c34, { roughness: 0.6, metalness: 0.2 });
-    const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x05060a,
-      roughness: 0.15,
-      metalness: 0.3,
-      emissive: 0x020308,
-      emissiveIntensity: 0.15,
-    });
-    this._track(glassMat);
+    // Full left wall = Hong Kong flat window wall (aluminium frames + large panes)
+    const frameMat = std(0x3a3e46, { roughness: 0.45, metalness: 0.45 });
+    const sillMat = std(0x2a2e34, { roughness: 0.55, metalness: 0.25 });
 
-    const wx = -W / 2 + 0.06;
-    const wy = H * 0.62;
-    const wz = -0.4;
-    this.windowPos = { x: wx, y: wy, z: wz };
+    this.windowGlassMats = [];
+    const makeGlass = () => {
+      const m = new THREE.MeshStandardMaterial({
+        color: 0x0a1020,
+        roughness: 0.12,
+        metalness: 0.25,
+        emissive: 0x020408,
+        emissiveIntensity: 0.2,
+        transparent: true,
+        opacity: 0.92,
+        side: THREE.DoubleSide,
+      });
+      this._track(m);
+      this.windowGlassMats.push(m);
+      return m;
+    };
 
-    // Outer frame (taller to include AC bay)
+    const wallX = -W / 2;
+    // Window spans nearly full wall depth & height
+    const winDepth = D - 0.5; // leave small solid returns at front/back
+    const winBottom = 0.35;
+    const winTop = H - 0.12;
+    const winH = winTop - winBottom;
+    const winZ0 = -winDepth / 2;
+
+    this.windowWall = {
+      x: wallX,
+      z0: winZ0,
+      depth: winDepth,
+      bottom: winBottom,
+      top: winTop,
+      height: winH,
+    };
+
+    // Solid returns (narrow strips front & back of left wall)
+    const retMat = std(0x1e2028, { roughness: 0.9 });
     this._mesh(
-      new THREE.BoxGeometry(0.08, 1.85, 1.45),
-      frameMat,
-      { pos: new THREE.Vector3(wx, H * 0.5, wz), cast: true }
+      new THREE.PlaneGeometry(0.5, H),
+      retMat,
+      { pos: new THREE.Vector3(wallX, H / 2, -D / 2 + 0.25), rot: { y: Math.PI / 2 }, cast: false }
     );
-
-    // Upper glass (outside dark)
     this._mesh(
-      new THREE.PlaneGeometry(1.15, 0.85),
-      glassMat,
+      new THREE.PlaneGeometry(0.5, H),
+      retMat,
+      { pos: new THREE.Vector3(wallX, H / 2, D / 2 - 0.25), rot: { y: Math.PI / 2 }, cast: false }
+    );
+    // Strip under sill
+    this._mesh(
+      new THREE.PlaneGeometry(winDepth, winBottom),
+      retMat,
+      { pos: new THREE.Vector3(wallX, winBottom / 2, 0), rot: { y: Math.PI / 2 }, cast: false }
+    );
+    // Strip above (lintel thin)
+    this._mesh(
+      new THREE.PlaneGeometry(winDepth, H - winTop),
+      retMat,
       {
-        pos: new THREE.Vector3(wx + 0.05, wy, wz),
+        pos: new THREE.Vector3(wallX, winTop + (H - winTop) / 2, 0),
         rot: { y: Math.PI / 2 },
         cast: false,
       }
     );
 
-    // Vertical mullion (upper)
+    // Outer frame rails (hollow — left reveal only, not a solid slab)
+    // Top rail
     this._mesh(
-      new THREE.BoxGeometry(0.05, 0.85, 0.06),
+      new THREE.BoxGeometry(0.1, 0.08, winDepth + 0.08),
       frameMat,
-      { pos: new THREE.Vector3(wx + 0.02, wy, wz), cast: false }
+      { pos: new THREE.Vector3(wallX + 0.05, winTop, 0), cast: true }
     );
-    // Horizontal mullion separating glass / AC
+    // Bottom rail (above sill)
     this._mesh(
-      new THREE.BoxGeometry(0.06, 0.06, 1.35),
+      new THREE.BoxGeometry(0.1, 0.06, winDepth + 0.08),
       frameMat,
-      { pos: new THREE.Vector3(wx + 0.02, H * 0.42, wz), cast: false }
+      { pos: new THREE.Vector3(wallX + 0.05, winBottom + 0.02, 0), cast: true }
     );
+
+    // Horizontal sill
+    this._mesh(
+      new THREE.BoxGeometry(0.22, 0.06, winDepth + 0.08),
+      sillMat,
+      { pos: new THREE.Vector3(wallX + 0.14, winBottom, 0), cast: false }
+    );
+
+    // Vertical mullions — 4 bays
+    const bays = 4;
+    const bayW = winDepth / bays;
+    for (let i = 0; i <= bays; i++) {
+      const z = winZ0 + i * bayW;
+      this._mesh(
+        new THREE.BoxGeometry(0.08, winH, 0.06),
+        frameMat,
+        { pos: new THREE.Vector3(wallX + 0.06, winBottom + winH / 2, z), cast: false }
+      );
+    }
+
+    // Horizontal rails: mid + AC shelf rail near top
+    const midY = winBottom + winH * 0.42;
+    const acRailY = winBottom + winH * 0.72; // AC sits above this
+    for (const y of [midY, acRailY]) {
+      this._mesh(
+        new THREE.BoxGeometry(0.07, 0.05, winDepth),
+        frameMat,
+        { pos: new THREE.Vector3(wallX + 0.06, y, 0), cast: false }
+      );
+    }
+
+    // Glass panes — skip upper bay near back for AC (bay index 0 = back)
+    // Bay 0 upper = AC; other panes get glass
+    const glassInset = 0.04;
+    const paneDepth = bayW - 0.08;
+    const lowerH = midY - winBottom - 0.04;
+    const midH = acRailY - midY - 0.04;
+    const upperH = winTop - acRailY - 0.04;
+
+    for (let i = 0; i < bays; i++) {
+      const z = winZ0 + (i + 0.5) * bayW;
+      // Lower panes (all bays)
+      this._mesh(
+        new THREE.PlaneGeometry(paneDepth, lowerH),
+        makeGlass(),
+        {
+          pos: new THREE.Vector3(wallX + 0.08, winBottom + lowerH / 2 + 0.02, z),
+          rot: { y: Math.PI / 2 },
+          cast: false,
+        }
+      );
+      // Mid panes
+      this._mesh(
+        new THREE.PlaneGeometry(paneDepth, midH),
+        makeGlass(),
+        {
+          pos: new THREE.Vector3(wallX + 0.08, midY + midH / 2 + 0.02, z),
+          rot: { y: Math.PI / 2 },
+          cast: false,
+        }
+      );
+      // Upper panes — skip bay 1 (second from back) for AC unit
+      if (i !== 1) {
+        this._mesh(
+          new THREE.PlaneGeometry(paneDepth, upperH),
+          makeGlass(),
+          {
+            pos: new THREE.Vector3(wallX + 0.08, acRailY + upperH / 2 + 0.02, z),
+            rot: { y: Math.PI / 2 },
+            cast: false,
+          }
+        );
+      }
+    }
+
+    // Exterior sky / city glow plane (outside window)
+    const skyGeo = new THREE.PlaneGeometry(winDepth + 1.2, winH + 1.5);
+    this.skyMat = new THREE.MeshBasicMaterial({
+      color: 0x02040a,
+      side: THREE.DoubleSide,
+      fog: false,
+    });
+    this._track(this.skyMat);
+    this.skyMesh = new THREE.Mesh(skyGeo, this.skyMat);
+    this.skyMesh.position.set(wallX - 0.8, winBottom + winH / 2, 0);
+    this.skyMesh.rotation.y = Math.PI / 2;
+    this.skyMesh.frustumCulled = false;
+    this.group.add(this.skyMesh);
+    this._track(skyGeo);
+
+    // Soft horizon glow strip
+    this.horizonMat = new THREE.MeshBasicMaterial({
+      color: 0x050810,
+      side: THREE.DoubleSide,
+      fog: false,
+      transparent: true,
+      opacity: 0.85,
+    });
+    this._track(this.horizonMat);
+    const horGeo = new THREE.PlaneGeometry(winDepth + 1.4, 0.9);
+    this.horizonMesh = new THREE.Mesh(horGeo, this.horizonMat);
+    this.horizonMesh.position.set(wallX - 0.75, winBottom + 0.35, 0);
+    this.horizonMesh.rotation.y = Math.PI / 2;
+    this.group.add(this.horizonMesh);
+    this._track(horGeo);
+
+    // Store AC bay centre for high mount
+    this.acBay = {
+      x: wallX + 0.32,
+      y: acRailY + upperH / 2 + 0.02,
+      z: winZ0 + 1.5 * bayW,
+      upperH,
+      paneDepth,
+    };
+    this.windowPos = { x: wallX + 0.08, y: acRailY + upperH / 2, z: this.acBay.z };
   }
 
   /**
-   * Classic HK window-type AC sitting in the lower window bay.
+   * Classic HK window-type AC mounted HIGH in the window opening.
    */
   _buildWindowAC() {
-    const { W, H } = this.size;
-    const wx = -W / 2 + 0.28;
-    const wy = H * 0.28;
-    const wz = -0.4;
+    const bay = this.acBay;
+    const wx = bay.x;
+    const wy = bay.y;
+    const wz = bay.z;
 
     this.acBodyMat = std(0xb0b6be, { roughness: 0.55, metalness: 0.25 });
     this._track(this.acBodyMat);
@@ -220,79 +364,82 @@ export class Room {
     });
     this._track(this.acLedMat);
 
-    // Main chassis (protrudes into room)
+    // Main chassis — high in window, protrudes into room
     this._mesh(
-      new THREE.BoxGeometry(0.55, 0.42, 0.72),
+      new THREE.BoxGeometry(0.58, 0.48, 0.78),
       this.acBodyMat,
       { pos: new THREE.Vector3(wx, wy, wz) }
     );
 
-    // Front face plate
+    // Front face plate (room side)
     this._mesh(
-      new THREE.BoxGeometry(0.04, 0.38, 0.68),
+      new THREE.BoxGeometry(0.04, 0.44, 0.72),
       darkMat,
-      { pos: new THREE.Vector3(wx + 0.28, wy, wz), cast: false }
+      { pos: new THREE.Vector3(wx + 0.3, wy, wz), cast: false }
     );
 
-    // Horizontal vent louvers (cool discharge)
+    // Horizontal vent louvers (cool discharge — high outlet)
     for (let i = 0; i < 5; i++) {
       this._mesh(
-        new THREE.BoxGeometry(0.03, 0.012, 0.55),
+        new THREE.BoxGeometry(0.03, 0.012, 0.58),
         this.acCoolMat,
         {
-          pos: new THREE.Vector3(wx + 0.305, wy + 0.08 - i * 0.035, wz),
+          pos: new THREE.Vector3(wx + 0.325, wy + 0.1 - i * 0.038, wz),
           cast: false,
         }
       );
     }
 
-    // Side intake grille (slots)
+    // Side intake grille
     for (let i = 0; i < 6; i++) {
       this._mesh(
-        new THREE.BoxGeometry(0.35, 0.015, 0.02),
+        new THREE.BoxGeometry(0.38, 0.015, 0.02),
         grilleMat,
         {
-          pos: new THREE.Vector3(wx - 0.02, wy + 0.12 - i * 0.04, wz + 0.34),
+          pos: new THREE.Vector3(wx - 0.02, wy + 0.14 - i * 0.045, wz + 0.36),
           cast: false,
         }
       );
     }
 
-    // Control panel strip
+    // Control panel
     this._mesh(
       new THREE.BoxGeometry(0.03, 0.1, 0.22),
       std(0x2a2e34, { roughness: 0.5, metalness: 0.3 }),
-      { pos: new THREE.Vector3(wx + 0.3, wy - 0.12, wz - 0.18), cast: false }
+      { pos: new THREE.Vector3(wx + 0.32, wy - 0.14, wz - 0.2), cast: false }
     );
 
     // Power LED
     this._mesh(
       new THREE.SphereGeometry(0.018, 10, 8),
       this.acLedMat,
-      { pos: new THREE.Vector3(wx + 0.32, wy - 0.12, wz - 0.18), cast: false }
+      { pos: new THREE.Vector3(wx + 0.34, wy - 0.14, wz - 0.2), cast: false }
     );
 
-    // Brand-neutral badge plate
+    // Badge
     this._mesh(
       new THREE.BoxGeometry(0.02, 0.04, 0.14),
       std(0x888e98, { metalness: 0.5, roughness: 0.4 }),
-      { pos: new THREE.Vector3(wx + 0.3, wy + 0.14, wz + 0.2), cast: false }
+      { pos: new THREE.Vector3(wx + 0.32, wy + 0.16, wz + 0.22), cast: false }
     );
 
-    // Condensate drip tray lip under unit
+    // Condensate drip tray
     this._mesh(
-      new THREE.BoxGeometry(0.5, 0.03, 0.08),
+      new THREE.BoxGeometry(0.52, 0.03, 0.08),
       std(0x6a7078, { metalness: 0.4, roughness: 0.5 }),
-      { pos: new THREE.Vector3(wx + 0.05, wy - 0.24, wz), cast: false }
+      { pos: new THREE.Vector3(wx + 0.05, wy - 0.27, wz), cast: false }
     );
 
-    // Wall sleeve / frame around AC bay
-    const sleeve = std(0x2a2c34, { roughness: 0.65, metalness: 0.15 });
+    // Window sleeve / frame around AC bay
+    const sleeve = std(0x3a3e46, { roughness: 0.5, metalness: 0.35 });
     this._mesh(
-      new THREE.BoxGeometry(0.12, 0.48, 0.82),
+      new THREE.BoxGeometry(0.14, 0.55, 0.88),
       sleeve,
-      { pos: new THREE.Vector3(-W / 2 + 0.08, wy, wz), cast: false }
+      { pos: new THREE.Vector3(-this.size.W / 2 + 0.08, wy, wz), cast: false }
     );
+
+    // Outlet reference for fan placement (high cool air)
+    this.acOutlet = new THREE.Vector3(wx + 0.35, wy - 0.05, wz);
   }
 
   _buildFurniture() {
@@ -400,12 +547,12 @@ export class Room {
     this._mesh(
       new THREE.CylinderGeometry(0.18, 0.14, 0.28, 12),
       std(0x3a2e28),
-      { pos: new THREE.Vector3(-2.6, 0.14, -2.2) }
+      { pos: new THREE.Vector3(-2.4, 0.14, 2.2) }
     );
     this._mesh(
       new THREE.SphereGeometry(0.35, 10, 8),
       std(0x1a3020, { roughness: 0.95 }),
-      { pos: new THREE.Vector3(-2.6, 0.55, -2.2) }
+      { pos: new THREE.Vector3(-2.4, 0.55, 2.2) }
     );
   }
 
@@ -638,7 +785,7 @@ export class Room {
     }
 
     // Default: far from fridge (left back corner near plant)
-    this._stoveFar = new THREE.Vector3(-2.2, 0, -2.5);
+    this._stoveFar = new THREE.Vector3(-2.0, 0, 2.35);
     this._stoveNear = new THREE.Vector3(W / 2 - 0.95, 0, 0.85);
     this.stoveGroup.position.copy(this._stoveFar);
   }
@@ -757,10 +904,11 @@ export class Room {
     led.position.set(0.12, 0.05, 0.1);
     this.fanRoot.add(led);
 
-    // Correct: under AC outlet, angled up toward room center
-    this._fanCorrectPos = new THREE.Vector3(-W / 2 + 0.95, 0, -0.35);
-    this._fanCorrectRotY = Math.PI / 2 - 0.35; // face toward room center
-    this._fanCorrectTilt = -0.55; // 仰角 (head tip up)
+    // Correct: on floor under high AC outlet, angled up to room center
+    const acZ = this.acOutlet ? this.acOutlet.z : -0.5;
+    this._fanCorrectPos = new THREE.Vector3(-W / 2 + 1.05, 0, acZ);
+    this._fanCorrectRotY = Math.PI / 2 - 0.25;
+    this._fanCorrectTilt = -0.72; // strong 仰角 toward high AC + room
 
     // Wrong: against front-right wall, blowing into wall
     this._fanWrongPos = new THREE.Vector3(W / 2 - 0.7, 0, 2.4);
@@ -788,6 +936,7 @@ export class Room {
     });
     this._track(mat);
 
+    const acZ = this.acOutlet ? this.acOutlet.z : -0.5;
     for (let i = 0; i < 5; i++) {
       const arrow = new THREE.Mesh(
         this._track(new THREE.ConeGeometry(0.04, 0.14, 8)),
@@ -795,13 +944,14 @@ export class Room {
       );
       this._track(arrow.material);
       const t = i / 4;
+      // Rise from floor fan under high AC toward room centre
       arrow.position.set(
-        -W / 2 + 1.1 + t * 1.8,
-        0.9 + t * 0.55,
-        -0.2 + t * 0.9
+        -W / 2 + 1.15 + t * 2.0,
+        0.55 + t * 1.35,
+        acZ + t * 0.35
       );
-      arrow.rotation.z = -0.9;
-      arrow.rotation.y = 0.4;
+      arrow.rotation.z = -1.05;
+      arrow.rotation.y = 0.25;
       arrow.userData.baseY = arrow.position.y;
       this.airflowGroup.add(arrow);
     }
@@ -894,6 +1044,30 @@ export class Room {
     });
     // 「上方不可置物」— stuffed stacks on top as a gentle teaching cue
     this.fridgeFillGroup.visible = fill !== 'off';
+  }
+
+  /**
+   * Update exterior sky / glass emissive from day-cycle palette.
+   * @param {{ sky: import('three').Color, horizon: import('three').Color, windowColor?: import('three').Color, windowDir?: number, phase: string }} palette
+   */
+  setDaylight(palette) {
+    if (this.skyMat && palette.sky) {
+      this.skyMat.color.copy(palette.sky);
+    }
+    if (this.horizonMat && palette.horizon) {
+      this.horizonMat.color.copy(palette.horizon);
+      this.horizonMat.opacity = palette.phase === 'night' ? 0.35 : 0.9;
+    }
+    if (this.windowGlassMats) {
+      const em = palette.windowColor || palette.sky;
+      const night = palette.phase === 'night';
+      for (const m of this.windowGlassMats) {
+        m.emissive.copy(em);
+        m.emissiveIntensity = night ? 0.15 : 0.45 + (palette.windowDir || 0) * 0.15;
+        m.color.copy(em).multiplyScalar(night ? 0.15 : 0.55);
+        m.opacity = night ? 0.88 : 0.55;
+      }
+    }
   }
 
   dispose() {

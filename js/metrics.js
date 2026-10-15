@@ -264,3 +264,15 @@ export function formatMoney(n) {
 export function formatKwh(n) {
   return n < 10 ? n.toFixed(2) : n.toFixed(1);
 }
+
+/**
+ * Instantaneous total watts for time-play accumulation (not hours-scaled).
+ * Lights / AC / fan draw when ON; fridge draws when ON (24h appliance).
+ */
+export function computeInstantWatts(state) {
+  const m = computeMetrics({
+    ...state,
+    hoursPerDay: 24, // unused for watts fields
+  });
+  return m.watts;
+}

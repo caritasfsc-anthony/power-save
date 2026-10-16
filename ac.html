@@ -13,29 +13,143 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
+    :root {
+      --surface-0: #020617;
+      --surface-1: rgba(15, 23, 42, 0.72);
+      --surface-2: rgba(30, 41, 59, 0.5);
+      --line: rgba(148, 163, 184, 0.12);
+      --line-strong: rgba(148, 163, 184, 0.18);
+      --shadow-soft: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 28px rgba(0,0,0,0.22);
+      --shadow-card: 0 1px 0 rgba(255,255,255,0.03) inset, 0 6px 20px rgba(0,0,0,0.16);
+      --radius-lg: 1rem;
+      --radius-xl: 1.25rem;
+    }
     body {
       font-family: 'Noto Sans TC', system-ui, sans-serif;
       user-select: none;
       -webkit-user-select: none;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, var(--accent-glow), transparent 55%),
+        radial-gradient(900px 420px at 90% 0%, rgba(15, 23, 42, 0.9), transparent 50%),
+        var(--surface-0);
     }
     .glass {
-      background: rgba(15, 23, 42, 0.78);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(148, 163, 184, 0.12);
+      background: var(--surface-1);
+      backdrop-filter: blur(22px) saturate(1.35);
+      -webkit-backdrop-filter: blur(22px) saturate(1.35);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
     }
     .glass-soft {
-      background: rgba(30, 41, 59, 0.55);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(148, 163, 184, 0.14);
+      background: var(--surface-2);
+      backdrop-filter: blur(14px) saturate(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-card);
+    }
+    .panel {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+    }
+    .site-header {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .mascot-frame {
+      box-shadow: 0 0 0 2px var(--accent-ring), 0 12px 28px var(--accent-glow-strong);
+    }
+    .brand-title {
+      letter-spacing: -0.01em;
+    }
+    .brand-sub {
+      color: #94a3b8;
+    }
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      min-height: 36px;
+      padding: 0.375rem 0.625rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(71, 85, 105, 0.75);
+      color: #cbd5e1;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease, color 0.15s ease;
+    }
+    .nav-chip:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: var(--accent-border);
+      color: #f8fafc;
+    }
+    .nav-chip.is-current {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent-text);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+    }
+    .dash-strip {
+      background: linear-gradient(180deg, rgba(15,23,42,0.82), rgba(2,6,23,0.72));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .lesson-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .lesson-strip a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      min-height: 42px;
+      padding: 0.55rem 0.65rem;
+      border-radius: 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid rgba(71, 85, 105, 0.7);
+      background: rgba(15, 23, 42, 0.55);
+      color: #cbd5e1;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+    }
+    .lesson-strip a:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent-border);
+      background: rgba(30, 41, 59, 0.75);
+      color: #f8fafc;
+    }
+    .lesson-strip a.is-current {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent-text);
+      box-shadow: 0 0 0 1px var(--accent-soft), 0 8px 20px rgba(0,0,0,0.18);
+      pointer-events: none;
     }
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(148, 163, 184, 0.25);
+      background: rgba(148, 163, 184, 0.28);
       border-radius: 9999px;
+    }
+    .btn-touch {
+      min-height: 36px;
+      min-width: 36px;
+      touch-action: manipulation;
+    }
+
+    :root {
+      --accent: #22d3ee;
+      --accent-text: #a5f3fc;
+      --accent-soft: rgba(34, 211, 238, 0.14);
+      --accent-border: rgba(34, 211, 238, 0.45);
+      --accent-ring: rgba(34, 211, 238, 0.42);
+      --accent-glow: rgba(34, 211, 238, 0.12);
+      --accent-glow-strong: rgba(14, 165, 233, 0.28);
     }
     input[type=range] {
       -webkit-appearance: none;
@@ -45,7 +159,6 @@
       border-radius: 9999px;
       background: #334155;
       outline: none;
-      /* enlarge hit area without changing visual track */
       margin: 14px 0;
     }
     input[type=range]::-webkit-slider-thumb {
@@ -55,7 +168,7 @@
       border-radius: 50%;
       background: #22d3ee;
       cursor: pointer;
-      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.25);
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.28);
       touch-action: manipulation;
     }
     input[type=range]::-moz-range-thumb {
@@ -130,48 +243,53 @@
         min-width: 6.5rem;
       }
     }
+
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="w-full glass z-30 sticky top-0 border-b border-slate-800/80 px-2.5 sm:px-5 py-1.5 sm:py-3 flex items-center justify-between gap-2">
+  <header class="w-full glass site-header z-30 sticky top-0 px-2.5 sm:px-5 py-1.5 sm:py-3 flex items-center justify-between gap-2">
     <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-      <img src="mascot.png" alt="長洲節能減碳小先鋒" class="w-10 h-10 sm:w-16 sm:h-16 lg:w-[4.5rem] lg:h-[4.5rem] rounded-xl sm:rounded-2xl object-cover shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-400/40 flex-shrink-0 bg-slate-900"
+      <img src="mascot.png" alt="長洲節能減碳小先鋒" class="mascot-frame w-10 h-10 sm:w-16 sm:h-16 lg:w-[4.5rem] lg:h-[4.5rem] rounded-xl sm:rounded-2xl object-cover flex-shrink-0 bg-slate-900"
            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
       <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-500 items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0 hidden">
         <i data-lucide="wind" class="w-5 h-5 sm:w-7 sm:h-7 text-white stroke-[2.5]"></i>
       </div>
       <div class="min-w-0">
-        <h1 class="text-xs sm:text-base lg:text-lg font-black tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent leading-snug truncate">
+        <h1 class="brand-title text-xs sm:text-base lg:text-lg font-black tracking-tight bg-gradient-to-r from-cyan-300 via-sky-200 to-blue-300 bg-clip-text text-transparent leading-snug truncate">
           長洲節能減碳小先鋒計劃
         </h1>
-        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">冷氣降溫術！涼爽又慳家！</p>
+        <p class="brand-sub text-[10px] sm:text-xs mt-0.5 truncate">冷氣降溫術！涼爽又慳家！</p>
       </div>
     </div>
 
     <div class="flex items-center justify-end gap-1 sm:gap-2 flex-shrink-0">
-      <a href="index.html" class="hidden sm:inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all">
+      <a href="index.html" class="nav-chip hidden sm:inline-flex">
         <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
         <span>燈泡</span>
       </a>
-      <a href="fridge.html" class="hidden sm:inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all">
+      <a href="ac.html" class="nav-chip is-current hidden sm:inline-flex" aria-current="page">
+        <i data-lucide="wind" class="w-3.5 h-3.5 text-cyan-300"></i>
+        <span>冷氣</span>
+      </a>
+      <a href="fridge.html" class="nav-chip hidden sm:inline-flex">
         <i data-lucide="snowflake" class="w-3.5 h-3.5 text-teal-300"></i>
         <span>雪櫃</span>
       </a>
-      <button id="airflowToggleBtn" title="氣流" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95">
+      <button id="airflowToggleBtn" title="氣流" class="btn-touch inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95">
         <i data-lucide="git-commit" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
         <span id="airflowToggleText" class="hidden sm:inline">氣流</span>
       </button>
-      <button id="streamModeBtn" title="波紋" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 transition-all active:scale-95">
+      <button id="streamModeBtn" title="波紋" class="btn-touch inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 transition-all active:scale-95">
         <i data-lucide="activity" class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-cyan-400"></i>
         <span id="streamModeText" class="hidden sm:inline">波紋</span>
       </button>
-      <button id="acPowerBtn" title="開關" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 active:scale-95">
+      <button id="acPowerBtn" title="開關" class="btn-touch inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-all shadow-md shadow-cyan-600/30 active:scale-95">
         <i data-lucide="power" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
         <span id="acPowerText" class="hidden sm:inline">開</span>
       </button>
-      <button id="quizModalOpenBtn" title="測驗" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-600 text-white transition-all active:scale-95">
+      <button id="quizModalOpenBtn" title="測驗" class="btn-touch inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-600 text-white transition-all active:scale-95">
         <i data-lucide="help-circle" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
         <span class="hidden sm:inline">測驗</span>
       </button>
@@ -179,22 +297,22 @@
   </header>
 
   <!-- Cost dashboard -->
-  <section class="w-full bg-slate-900/70 border-b border-slate-800/80 px-2.5 sm:px-5 py-2 sm:py-3">
+  <section class="w-full dash-strip px-2.5 sm:px-5 py-2 sm:py-3">
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-3">
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <span class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/25 flex items-center gap-1">
+        <span class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 flex items-center gap-1 shadow-sm shadow-rose-500/10">
           <i data-lucide="flame" class="w-3 h-3"></i> 夏天好熱
         </span>
         <span class="text-[10px] sm:text-[11px] text-slate-400">
           天文台 <strong class="text-rose-300">36.9°C</strong> · <strong class="text-amber-300">HK$1.41/度</strong>
         </span>
-        <a href="index.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">← 燈泡</a>
-        <a href="fridge.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-teal-300 border border-slate-700">雪櫃 →</a>
+        <a href="index.html" class="sm:hidden px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800/90 text-amber-300 border border-amber-500/30">← 燈泡</a>
+        <a href="fridge.html" class="sm:hidden px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800/90 text-teal-300 border border-teal-500/30">雪櫃 →</a>
       </div>
 
       <div class="grid grid-cols-3 gap-1 sm:gap-2 w-full lg:w-auto lg:min-w-[560px]">
         <div id="sceneCardCareless" role="button" tabindex="0" aria-label="套用隨意開：21°C、無扇"
-             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all duration-200 border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
           <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-semibold text-rose-400">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500"></span> 隨意開
           </div>
@@ -212,7 +330,7 @@
         </div>
 
         <div id="sceneCardCurrent" role="button" tabindex="0" aria-label="而家設定（自訂）"
-             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border-2 border-sky-500/80 hover:scale-[1.02] active:scale-[0.98] select-none">
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all duration-200 border-2 border-sky-500/80 hover:scale-[1.02] active:scale-[0.98] select-none">
           <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-bold text-sky-300">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400 animate-pulse"></span> 而家設定
           </div>
@@ -230,7 +348,7 @@
         </div>
 
         <div id="sceneCardOptimal" role="button" tabindex="0" aria-label="套用慳電模式：25.5°C、四招齊"
-             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all duration-200 border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
           <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-semibold text-emerald-400">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400"></span> 慳電模式
           </div>
@@ -336,9 +454,9 @@
     </div>
 
     <!-- Tips sidebar -->
-    <div class="lg:col-span-5 xl:col-span-4 glass border-t lg:border-t-0 lg:border-l border-slate-800/80 flex flex-col flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar p-3.5 sm:p-4 lg:p-5 space-y-3 pb-8">
+    <div class="lg:col-span-5 xl:col-span-4 glass border-t lg:border-t-0 lg:border-l border-slate-700/50 flex flex-col flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar p-3.5 sm:p-4 lg:p-5 space-y-3.5 pb-8">
 
-      <div class="bg-gradient-to-r from-blue-950/60 to-cyan-950/50 rounded-2xl p-4 border border-cyan-500/25">
+      <div class="panel bg-gradient-to-br from-cyan-950/55 via-slate-900/80 to-blue-950/50 rounded-2xl p-4 border border-cyan-500/30">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
             第二回 · 冷氣
@@ -414,7 +532,7 @@
         </button>
       </div>
 
-      <div class="bg-gradient-to-r from-emerald-950/50 to-cyan-950/40 border border-emerald-500/35 rounded-2xl p-3.5 flex items-center justify-between">
+      <div class="panel bg-gradient-to-r from-emerald-950/55 to-cyan-950/40 border border-cyan-500/30 rounded-2xl p-3.5 flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
             <i data-lucide="piggy-bank" class="w-4 h-4"></i>
@@ -430,23 +548,27 @@
         </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2">
-        <a href="index.html" class="flex-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all">
+      <nav class="lesson-strip" aria-label="課節導航">
+        <a href="index.html">
           <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
-          上一回：燈泡
+          燈泡
         </a>
-        <a href="fridge.html" class="flex-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-teal-950/40 hover:bg-teal-900/50 border border-teal-500/30 text-teal-200 transition-all">
-          <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
-          下一回：雪櫃
+        <a href="ac.html" class="is-current" aria-current="page">
+          <i data-lucide="wind" class="w-3.5 h-3.5 text-cyan-300"></i>
+          冷氣
         </a>
-      </div>
+        <a href="fridge.html">
+          <i data-lucide="snowflake" class="w-3.5 h-3.5 text-teal-300"></i>
+          雪櫃
+        </a>
+      </nav>
 
     </div>
   </main>
 
   <!-- Quiz Challenge Modal -->
   <div id="quizModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4">
+    <div class="bg-slate-900/95 border border-cyan-500/20 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4 backdrop-blur-xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="award" class="w-5 h-5 text-yellow-400"></i>
@@ -1317,20 +1439,20 @@
         current: document.getElementById('sceneCardCurrent'),
         optimal: document.getElementById('sceneCardOptimal')
       };
-      const base = "scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all hover:scale-[1.02] active:scale-[0.98] select-none ";
+      const base = "scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] select-none ";
       if (cards.careless) {
         cards.careless.className = base + (state.activeScene === 'careless'
-          ? "border-2 border-rose-500/90 opacity-100 shadow-lg shadow-rose-900/20"
+          ? "border-2 border-rose-500/90 opacity-100 shadow-lg shadow-rose-500/15 bg-rose-950/20"
           : "border border-slate-700/80 opacity-85");
       }
       if (cards.current) {
         cards.current.className = base + (state.activeScene === 'current'
-          ? "border-2 border-sky-500/90 opacity-100 shadow-lg shadow-sky-900/20"
+          ? "border-2 border-sky-500/90 opacity-100 shadow-lg shadow-sky-500/15 bg-sky-950/25"
           : "border border-slate-700/80 opacity-85");
       }
       if (cards.optimal) {
         cards.optimal.className = base + (state.activeScene === 'optimal'
-          ? "border-2 border-emerald-500/90 opacity-100 shadow-lg shadow-emerald-900/20"
+          ? "border-2 border-emerald-500/90 opacity-100 shadow-lg shadow-emerald-500/15 bg-emerald-950/20"
           : "border border-slate-700/80 opacity-85");
       }
     }
@@ -1347,10 +1469,10 @@
       const textSpan = document.getElementById('acPowerText');
       if (acPowerBtn && textSpan) {
         if (state.isAcOn) {
-          acPowerBtn.className = "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 active:scale-95";
+          acPowerBtn.className = "btn-touch inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white transition-all shadow-md shadow-cyan-600/30 active:scale-95";
           textSpan.innerText = "開";
         } else {
-          acPowerBtn.className = "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all border border-slate-700 active:scale-95";
+          acPowerBtn.className = "btn-touch inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all border border-slate-700 active:scale-95";
           textSpan.innerText = "關";
         }
       }

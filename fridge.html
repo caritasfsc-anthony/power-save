@@ -510,8 +510,8 @@
     let pointerNdc = new THREE.Vector2();
     const FRONT_CORRIDOR_Z = -0.55;
     const PLACEMENT_POS = {
-      // 陰涼：面向鏡頭廚櫃左邊、近左牆（櫃前走廊，唔穿櫃）
-      cool: new THREE.Vector3(-2.35, 0, -0.72),
+      // 陰涼：面向鏡頭廚櫃左邊近牆角，再後退遠離窗（櫃前清空，唔穿櫃）
+      cool: new THREE.Vector3(-2.48, 0, -1.12),
       stove: new THREE.Vector3(1.35, 0, -0.65),
       sun: new THREE.Vector3(-2.2, 0, 0.65)
     };
@@ -557,7 +557,7 @@
       scene.add(sunDirLight);
 
       coolRimLight = new THREE.PointLight(0x67e8f9, 0.55, 5);
-      coolRimLight.position.set(-2.35, 1.55, -0.45);
+      coolRimLight.position.set(-2.48, 1.55, -0.85);
       scene.add(coolRimLight);
 
       fridgeTargetPos = PLACEMENT_POS.cool.clone();
@@ -864,7 +864,7 @@
 
       // Cool-spot floor marker (no plant pot)
       const rug = box(1.05, 0.02, 0.95, 0x1e3a5f, { roughness: 0.95 });
-      rug.position.set(-2.35, 0.01, -0.72);
+      rug.position.set(-2.48, 0.01, -1.12);
       rug.name = 'coolRug';
       kitchenRoot.add(rug);
     }
@@ -1102,28 +1102,44 @@
         addFoodMesh(m);
       });
 
-      // Hot pot indicator
-      const pot = box(0.22, 0.14, 0.22, 0xef4444, { emissive: 0xf97316, emissiveIntensity: 0.35 });
-      pot.position.set(0.18, 0.42, 0.08);
+      // Hot pot indicator (middle shelf, visibly hot)
+      const pot = box(0.22, 0.14, 0.22, 0xef4444, { emissive: 0xff6b2d, emissiveIntensity: 0.95 });
+      pot.position.set(0.18, 0.98, 0.08);
       pot.visible = false;
       pot.name = 'hotPot';
       fridgeGroup.add(pot);
       fridgeGroup.hotPot = pot;
+      // Warm heat glow plate under pot
+      const heatPlate = new THREE.Mesh(
+        new THREE.CircleGeometry(0.16, 24),
+        new THREE.MeshBasicMaterial({ color: 0xff7a3d, transparent: true, opacity: 0.55, side: THREE.DoubleSide })
+      );
+      heatPlate.rotation.x = -Math.PI / 2;
+      heatPlate.position.set(0.18, 0.90, 0.08);
+      heatPlate.visible = false;
+      heatPlate.name = 'hotPlate';
+      fridgeGroup.add(heatPlate);
+      fridgeGroup.hotPlate = heatPlate;
+      const hotGlow = new THREE.PointLight(0xff6b2d, 0, 1.6);
+      hotGlow.position.set(0.18, 1.05, 0.12);
+      hotGlow.name = 'hotGlow';
+      fridgeGroup.add(hotGlow);
+      fridgeGroup.hotGlow = hotGlow;
       const steam = new THREE.Points(
         (() => {
           const g = new THREE.BufferGeometry();
-          const p = new Float32Array(20 * 3);
-          for (let i = 0; i < 20; i++) {
-            p[i*3] = (Math.random()-0.5)*0.15;
-            p[i*3+1] = Math.random()*0.2;
-            p[i*3+2] = (Math.random()-0.5)*0.15;
+          const p = new Float32Array(36 * 3);
+          for (let i = 0; i < 36; i++) {
+            p[i*3] = (Math.random()-0.5)*0.2;
+            p[i*3+1] = Math.random()*0.35;
+            p[i*3+2] = (Math.random()-0.5)*0.2;
           }
           g.setAttribute('position', new THREE.BufferAttribute(p, 3));
           return g;
         })(),
-        new THREE.PointsMaterial({ color: 0xf8fafc, size: 0.025, transparent: true, opacity: 0.5 })
+        new THREE.PointsMaterial({ color: 0xffd4a8, size: 0.038, transparent: true, opacity: 0.72, depthWrite: false })
       );
-      steam.position.set(0.18, 0.5, 0.08);
+      steam.position.set(0.18, 1.08, 0.08);
       steam.visible = false;
       steam.name = 'hotSteam';
       fridgeGroup.add(steam);
@@ -1135,8 +1151,14 @@
       const active = Math.round((state.capacityPct / 100) * n);
       foodItems.forEach((it, i) => { it.visible = i < active; });
       if (fridgeGroup.hotPot) {
-        fridgeGroup.hotPot.visible = state.isHotFoodIn && state.isDoorOpen;
-        if (fridgeGroup.hotSteam) fridgeGroup.hotSteam.visible = state.isHotFoodIn && state.isDoorOpen;
+        const showHot = state.isHotFoodIn && state.isDoorOpen;
+        fridgeGroup.hotPot.visible = showHot;
+        if (fridgeGroup.hotSteam) fridgeGroup.hotSteam.visible = showHot;
+        if (fridgeGroup.hotPlate) fridgeGroup.hotPlate.visible = showHot;
+        if (fridgeGroup.hotGlow) fridgeGroup.hotGlow.intensity = showHot ? 1.35 : 0;
+        if (showHot && fridgeGroup.hotPot.material) {
+          fridgeGroup.hotPot.material.emissiveIntensity = 0.85 + Math.sin(Date.now() * 0.008) * 0.2;
+        }
       }
       // Tint gasket when broken
       gasketMeshes.forEach(g => {
@@ -1232,8 +1254,8 @@
       const dest = target.clone();
       dest.y = 0;
       // Keep fridge on clear floor in front of cabinets (cabinet front ≈ z=-1.84)
-      // Left wall ≈ x=-3.35; fridge half-width ≈ 0.46 → stay ≥ -2.55
-      dest.z = Math.max(dest.z, -0.85);
+      // Fridge back ≈ pos.z-0.48 → z ≥ -1.20 keeps ~0.16 gap; left wall x≥-2.55
+      dest.z = Math.max(dest.z, -1.20);
       dest.x = Math.max(-2.55, Math.min(2.2, dest.x));
       if (instant || !fridgeGroup) {
         fridgeWaypoints = [];
@@ -1301,7 +1323,7 @@
         ambientLight.color.setHex(0xc5d4e8);
         coolRimLight.intensity = 0.7;
         coolRimLight.color.setHex(0x67e8f9);
-        coolRimLight.position.set(-2.35, 1.5, -0.45);
+        coolRimLight.position.set(-2.48, 1.5, -0.85);
       } else if (mode === 'stove') {
         setFridgePath(PLACEMENT_POS.stove, instant);
         stoveGlow.intensity = 1.9;
@@ -1665,10 +1687,22 @@
       if (fridgeGroup && fridgeGroup.hotSteam && fridgeGroup.hotSteam.visible) {
         const arr = fridgeGroup.hotSteam.geometry.attributes.position.array;
         for (let i = 0; i < arr.length; i += 3) {
-          arr[i + 1] += 0.008;
-          if (arr[i + 1] > 0.35) arr[i + 1] = 0;
+          arr[i + 1] += 0.012;
+          arr[i] += (Math.random() - 0.5) * 0.004;
+          if (arr[i + 1] > 0.5) {
+            arr[i + 1] = 0;
+            arr[i] = (Math.random() - 0.5) * 0.2;
+            arr[i + 2] = (Math.random() - 0.5) * 0.2;
+          }
         }
         fridgeGroup.hotSteam.geometry.attributes.position.needsUpdate = true;
+        if (fridgeGroup.hotGlow) fridgeGroup.hotGlow.intensity = 1.1 + Math.random() * 0.5;
+        if (fridgeGroup.hotPot && fridgeGroup.hotPot.material) {
+          fridgeGroup.hotPot.material.emissiveIntensity = 0.8 + Math.random() * 0.35;
+        }
+        if (fridgeGroup.hotPlate && fridgeGroup.hotPlate.material) {
+          fridgeGroup.hotPlate.material.opacity = 0.4 + Math.random() * 0.25;
+        }
       }
 
       if (state.locationMode === 'stove' && stoveGroup) {

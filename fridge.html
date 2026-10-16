@@ -511,11 +511,12 @@
     const FRONT_CORRIDOR_Z = -0.55;
     // Room refs: left wall inner x≈-3.28, back wall inner z≈-2.48
     // Fridge half-width ≈0.48, body back ≈0.38 from origin
+    // Unit shifted +2 floor tiles (+1.1 X) for gap from window wall
     const PLACEMENT_POS = {
-      // 陰涼：貼實左牆＋後牆深角，廚櫃列左邊（紅圈位置）
-      cool: new THREE.Vector3(-2.78, 0, -2.06),
-      stove: new THREE.Vector3(1.35, 0, -0.65),
-      sun: new THREE.Vector3(-2.2, 0, 0.65)
+      // 陰涼：廚櫃列左邊近後牆（與窗牆留約兩格地磚）
+      cool: new THREE.Vector3(-1.68, 0, -2.06),
+      stove: new THREE.Vector3(2.45, 0, -0.65),
+      sun: new THREE.Vector3(-1.1, 0, 0.65)
     };
 
     function init3D() {
@@ -537,7 +538,7 @@
       container.appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.target.set(0.15, 1.15, -0.2);
+      controls.target.set(1.0, 1.15, -0.2);
       controls.enableDamping = true;
       controls.maxPolarAngle = Math.PI * 0.48;
       controls.minDistance = 2.8;
@@ -548,7 +549,7 @@
       hemiLight = new THREE.HemisphereLight(0xd6e4ff, 0x3a2a1a, 0.38);
       scene.add(hemiLight);
       roomSpot = new THREE.SpotLight(0xfff4e6, 0.7, 22, Math.PI / 3.8, 0.45);
-      roomSpot.position.set(2.2, 4.4, 3.2);
+      roomSpot.position.set(3.0, 4.4, 3.2);
       roomSpot.castShadow = true;
       roomSpot.shadow.mapSize.set(1024, 1024);
       scene.add(roomSpot);
@@ -559,7 +560,7 @@
       scene.add(sunDirLight);
 
       coolRimLight = new THREE.PointLight(0x67e8f9, 0.55, 5);
-      coolRimLight.position.set(-2.78, 1.55, -1.85);
+      coolRimLight.position.set(-1.68, 1.55, -1.85);
       scene.add(coolRimLight);
 
       fridgeTargetPos = PLACEMENT_POS.cool.clone();
@@ -636,16 +637,16 @@
 
       // Ceiling strip light
       const ceilBar = box(3.2, 0.06, 0.35, 0xf1f5f9, { emissive: 0xfff7ed, emissiveIntensity: 0.35, roughness: 0.4 });
-      ceilBar.position.set(0.4, 3.25, 0.5);
+      ceilBar.position.set(1.5, 3.25, 0.5);
       kitchenRoot.add(ceilBar);
       const ceilGlow = new THREE.PointLight(0xfff4e6, 0.45, 10);
-      ceilGlow.position.set(0.4, 3.1, 0.5);
+      ceilGlow.position.set(1.5, 3.1, 0.5);
       kitchenRoot.add(ceilGlow);
 
       // Lower cabinets + counter — start just right of cool-corner fridge pocket
-      // Fridge cool right edge ≈ -2.30; first cab left edge ≈ -2.22
+      // Fridge cool right edge ≈ -1.20; first cab left edge ≈ -1.125 (+2 tiles from window wall)
       const cabColors = [0x334155, 0x2f3b4f];
-      const cab0x = -1.80;
+      const cab0x = -0.70;
       for (let i = 0; i < 5; i++) {
         const cab = box(0.85, 0.88, 0.62, cabColors[i % 2], { roughness: 0.65 });
         cab.position.set(cab0x + i * 0.9, 0.44, -2.15);
@@ -655,22 +656,22 @@
         kitchenRoot.add(handle);
       }
       const counterTop = box(4.40, 0.07, 0.72, 0xa8b4c4, { roughness: 0.35, metalness: 0.15 });
-      counterTop.position.set(0.05, 0.92, -2.12); // left edge ≈ -2.15, just right of cool fridge
+      counterTop.position.set(1.15, 0.92, -2.12); // left edge ≈ -1.05, just right of cool fridge
       kitchenRoot.add(counterTop);
 
       // Upper cabinets (aligned above base run)
       for (let i = 0; i < 4; i++) {
         const uc = box(0.9, 0.7, 0.4, 0x3d4a5f, { roughness: 0.6 });
-        uc.position.set(-1.55 + i * 0.95, 2.55, -2.25);
+        uc.position.set(-0.45 + i * 0.95, 2.55, -2.25);
         kitchenRoot.add(uc);
         const uh = box(0.22, 0.025, 0.025, 0x94a3b8, { metalness: 0.7, roughness: 0.3 });
-        uh.position.set(-1.55 + i * 0.95, 2.3, -2.03);
+        uh.position.set(-0.45 + i * 0.95, 2.3, -2.03);
         kitchenRoot.add(uh);
       }
 
       // Backsplash
       const splash = box(4.4, 0.55, 0.04, 0x64748b, { roughness: 0.4, metalness: 0.2 });
-      splash.position.set(0.15, 1.28, -2.42);
+      splash.position.set(1.25, 1.28, -2.42);
       kitchenRoot.add(splash);
 
       // —— Window with frame + exterior sky ——
@@ -820,55 +821,55 @@
       stoveGroup.add(potLid);
 
       // Sit ON countertop (counter y≈0.955)
-      stoveGroup.position.set(1.55, 0.955, -2.05);
+      stoveGroup.position.set(2.65, 0.955, -2.05);
       kitchenRoot.add(stoveGroup);
 
       // Kitchen clutter on counter — lived-in props (away from UI)
       const clutter = new THREE.Group();
       const board = box(0.42, 0.025, 0.28, 0xb45309, { roughness: 0.85 });
-      board.position.set(0.05, 0.98, -1.95);
+      board.position.set(1.15, 0.98, -1.95);
       clutter.add(board);
       const knife = box(0.02, 0.01, 0.22, 0xcbd5e1, { metalness: 0.7, roughness: 0.25 });
-      knife.position.set(0.12, 1.0, -1.95);
+      knife.position.set(1.22, 1.0, -1.95);
       clutter.add(knife);
       const jar = cyl(0.06, 0.07, 0.16, 0x334155, { metalness: 0.2, roughness: 0.5 });
-      jar.position.set(-0.45, 1.06, -1.95);
+      jar.position.set(0.65, 1.06, -1.95);
       clutter.add(jar);
       for (let i = 0; i < 4; i++) {
         const utensil = box(0.012, 0.18, 0.012, 0x94a3b8, { metalness: 0.6, roughness: 0.3 });
-        utensil.position.set(-0.45 + (i - 1.5) * 0.02, 1.2, -1.95);
+        utensil.position.set(0.65 + (i - 1.5) * 0.02, 1.2, -1.95);
         utensil.rotation.z = (i - 1.5) * 0.08;
         clutter.add(utensil);
       }
-      [[-0.15, 0xf87171], [0.35, 0x38bdf8], [0.55, 0xfbbf24]].forEach(([x, c], i) => {
+      [[0.95, 0xf87171], [1.45, 0x38bdf8], [1.65, 0xfbbf24]].forEach(([x, c], i) => {
         const bottle = cyl(0.035, 0.04, 0.2 + i * 0.03, c, { transparent: true, opacity: 0.85, roughness: 0.25, metalness: 0.15 });
         bottle.position.set(x, 1.08 + i * 0.01, -2.15);
         clutter.add(bottle);
       });
       const spice1 = cyl(0.04, 0.04, 0.1, 0x78350f);
-      spice1.position.set(2.55, 1.03, -2.15);
+      spice1.position.set(3.65, 1.03, -2.15);
       clutter.add(spice1);
       const spice2 = cyl(0.035, 0.035, 0.09, 0x9a3412);
-      spice2.position.set(2.68, 1.02, -2.12);
+      spice2.position.set(3.78, 1.02, -2.12);
       clutter.add(spice2);
       const cloth = box(0.28, 0.015, 0.18, 0x67e8f9, { roughness: 0.95 });
-      cloth.position.set(0.7, 0.97, -1.85);
+      cloth.position.set(1.8, 0.97, -1.85);
       cloth.rotation.y = 0.35;
       clutter.add(cloth);
       const kettle = cyl(0.09, 0.1, 0.16, 0xe2e8f0, { metalness: 0.55, roughness: 0.3 });
-      kettle.position.set(-0.85, 1.06, -1.95);
+      kettle.position.set(0.25, 1.06, -1.95);
       clutter.add(kettle);
       const kettleHandle = box(0.04, 0.1, 0.02, 0x64748b, { metalness: 0.5 });
-      kettleHandle.position.set(-0.72, 1.08, -1.95);
+      kettleHandle.position.set(0.38, 1.08, -1.95);
       clutter.add(kettleHandle);
       const toaster = box(0.28, 0.16, 0.18, 0x475569, { metalness: 0.35, roughness: 0.4 });
-      toaster.position.set(2.9, 1.05, -1.95);
+      toaster.position.set(4.0, 1.05, -1.95);
       clutter.add(toaster);
       kitchenRoot.add(clutter);
 
       // Cool-spot floor marker (no plant pot)
       const rug = box(0.95, 0.02, 0.88, 0x1e3a5f, { roughness: 0.95 });
-      rug.position.set(-2.78, 0.01, -2.06);
+      rug.position.set(-1.68, 0.01, -2.06);
       rug.name = 'coolRug';
       kitchenRoot.add(rug);
     }
@@ -1222,7 +1223,7 @@
       const sgeo = new THREE.BufferGeometry();
       const spos = new Float32Array(sc * 3);
       for (let i = 0; i < sc; i++) {
-        spos[i*3] = -2.2 + Math.random() * 1.6;
+        spos[i*3] = -1.5 + Math.random() * 1.6;
         spos[i*3+1] = 0.4 + Math.random() * 2.0;
         spos[i*3+2] = -0.2 + Math.random() * 1.0;
       }
@@ -1283,12 +1284,12 @@
     function setFridgePath(target, instant) {
       const dest = target.clone();
       dest.y = 0;
-      // Keep fridge clear of cabinets; deep cool corner hugs left+back walls
-      // Cool pocket: left of cab0 (cab left≈-2.22); side wall inner -3.28; back wall inner -2.48
-      dest.x = Math.max(-2.85, Math.min(2.2, dest.x));
-      if (dest.x < -2.35) {
-        dest.z = Math.max(dest.z, -2.10); // deep left corner flush to back wall
-      } else if (dest.x < -1.40) {
+      // Keep fridge clear of cabinets; cool pocket left of cab0 (cab left≈-1.125)
+      // Unit shifted +2 tiles; leave ~2-tile gap from window wall (x≈-3.28)
+      dest.x = Math.max(-1.75, Math.min(3.3, dest.x));
+      if (dest.x < -1.25) {
+        dest.z = Math.max(dest.z, -2.10); // deep cool pocket flush to back wall
+      } else if (dest.x < -0.30) {
         dest.z = Math.max(dest.z, -1.55); // near cab run — stay forward of cabinets
       } else {
         dest.z = Math.max(dest.z, -1.20); // in front of cabinet row
@@ -1359,7 +1360,7 @@
         ambientLight.color.setHex(0xc5d4e8);
         coolRimLight.intensity = 0.75;
         coolRimLight.color.setHex(0x67e8f9);
-        coolRimLight.position.set(-2.78, 1.5, -1.85);
+        coolRimLight.position.set(-1.68, 1.5, -1.85);
       } else if (mode === 'stove') {
         setFridgePath(PLACEMENT_POS.stove, instant);
         stoveGlow.intensity = 1.9;
@@ -1385,7 +1386,7 @@
         sunDirLight.position.set(-5.5, 4.8, 0.6);
         windowGlass.material.emissiveIntensity = 0.95;
         windowGlass.material.opacity = 0.5;
-        heatParticles.position.set(-1.7, 0.7, 0.45);
+        heatParticles.position.set(-0.6, 0.7, 0.45);
         heatParticles.material.color.setHex(0xffe08a);
         heatParticles.visible = true;
         if (sunParticles) sunParticles.visible = true;
@@ -1395,7 +1396,7 @@
         scene.fog.color.setHex(0x1c1810);
         coolRimLight.intensity = 0.35;
         coolRimLight.color.setHex(0xfbbf24);
-        coolRimLight.position.set(-1.8, 1.8, 0.5);
+        coolRimLight.position.set(-0.7, 1.8, 0.5);
       } else if (!instant) {
         // no-op
       }

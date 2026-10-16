@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>長洲節能減碳小先鋒計劃 · 雪櫃收納</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', system-ui, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .glass-soft {
+      background: rgba(30, 41, 59, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: #334155;
+      outline: none;
+      margin: 14px 0;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #22d3ee;
+      cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.25);
+      touch-action: manipulation;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: #22d3ee;
+      cursor: pointer;
+    }
+    .scene-card {
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .scene-card:focus-visible {
+      outline: 2px solid #22d3ee;
+      outline-offset: 2px;
+    }
+    .loc-bar {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .loc-bar::-webkit-scrollbar { display: none; }
+    @media (max-width: 1023px) {
+      #statusHud { display: none !important; }
+      #dragHint { display: none !important; }
+      #canvasContainer {
+        height: 52vh;
+        min-height: 280px;
+        max-height: 440px;
+      }
+    }
+    @media (min-width: 1024px) {
+      #thermoFloatingBadge {
+        position: absolute;
+        bottom: 5.5rem;
+        left: 1rem;
+        right: auto;
+        width: auto;
+        max-width: 28rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        border-top-width: 1px !important;
+        background: rgba(15, 23, 42, 0.82) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        z-index: 10;
+        padding: 0.75rem 1rem;
+      }
+      #locBar {
+        position: absolute;
+        bottom: 0.75rem;
+        left: auto;
+        right: 0.75rem;
+        width: auto;
+        max-width: calc(100% - 1.5rem);
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        border-top-width: 1px !important;
+        background: rgba(15, 23, 42, 0.82) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        z-index: 20;
+        padding: 0.375rem;
+      }
+      #locBar button {
+        flex: 0 1 auto;
+        min-width: 6.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <header class="w-full glass z-30 sticky top-0 border-b border-slate-800/80 px-2.5 sm:px-5 py-1.5 sm:py-3 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+      <img src="mascot.png" alt="長洲節能減碳小先鋒" class="w-10 h-10 sm:w-16 sm:h-16 lg:w-[4.5rem] lg:h-[4.5rem] rounded-xl sm:rounded-2xl object-cover shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-400/40 flex-shrink-0 bg-slate-900"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-cyan-400 to-teal-500 items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0 hidden">
+        <i data-lucide="snowflake" class="w-5 h-5 sm:w-7 sm:h-7 text-slate-950 stroke-[2.5]"></i>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-xs sm:text-base lg:text-lg font-black tracking-tight bg-gradient-to-r from-cyan-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent leading-snug truncate">
+          長洲節能減碳小先鋒計劃
+        </h1>
+        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">明愛慳電 · 雪櫃收納 · 睇容量、計電費</p>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-1 sm:gap-2 flex-shrink-0">
+      <a href="index.html" class="hidden sm:inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all">
+        <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
+        <span>燈泡</span>
+      </a>
+      <a href="ac.html" class="hidden sm:inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all">
+        <i data-lucide="wind" class="w-3.5 h-3.5 text-sky-300"></i>
+        <span>冷氣</span>
+      </a>
+      <button id="doorToggleBtn" title="雪櫃門" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95">
+        <i data-lucide="door-open" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+        <span id="doorToggleText" class="hidden sm:inline">開門</span>
+      </button>
+      <button id="xrayToggleBtn" title="透視" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 transition-all active:scale-95">
+        <i data-lucide="eye" class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-cyan-400"></i>
+        <span id="xrayToggleText" class="hidden sm:inline">透視</span>
+      </button>
+      <button id="quizModalOpenBtn" title="測驗" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-600 text-white transition-all active:scale-95">
+        <i data-lucide="help-circle" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+        <span class="hidden sm:inline">測驗</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="w-full bg-slate-900/70 border-b border-slate-800/80 px-2.5 sm:px-5 py-2 sm:py-3">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-3">
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <span class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 flex items-center gap-1">
+          <i data-lucide="battery-charging" class="w-3 h-3"></i> 24小時長開
+        </span>
+        <span class="text-[10px] sm:text-[11px] text-slate-400">
+          <strong class="text-amber-300">HK$1.41/度</strong> · 半年計
+        </span>
+        <a href="ac.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">← 冷氣</a>
+        <a href="index.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">燈泡</a>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1 sm:gap-2 w-full lg:w-auto lg:min-w-[560px]">
+        <div id="sceneCardCareless" role="button" tabindex="0" aria-label="套用塞爆：100% 近爐"
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
+          <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-semibold text-rose-400">
+            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500"></span> 塞爆近爐
+          </div>
+          <div class="text-[9px] text-slate-500 mt-0.5 hidden sm:block">100% · 5級</div>
+          <div class="mt-0.5 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
+            <div>
+              <div class="text-[7px] sm:text-[9px] text-slate-500">度數</div>
+              <div id="benchBadKwh" class="font-mono font-bold text-white text-[10px] sm:text-sm leading-tight">480 kWh</div>
+            </div>
+            <div class="border-l border-slate-700 pl-1 sm:pl-2">
+              <div class="text-[7px] sm:text-[9px] text-slate-500">電費</div>
+              <div id="benchBadCost" class="font-mono font-black text-rose-400 text-[10px] sm:text-sm leading-tight">HK$ 675</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="sceneCardCurrent" role="button" tabindex="0" aria-label="而家設定（自訂）"
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border-2 border-cyan-500/80 hover:scale-[1.02] active:scale-[0.98] select-none">
+          <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-bold text-cyan-300">
+            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-cyan-400 animate-pulse"></span> 而家設定
+          </div>
+          <div class="text-[9px] text-slate-500 mt-0.5 hidden sm:block">跟你調</div>
+          <div class="mt-0.5 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
+            <div>
+              <div class="text-[7px] sm:text-[9px] text-slate-500">度數</div>
+              <div id="currentKwh" class="font-mono font-bold text-white text-[10px] sm:text-sm leading-tight">180 kWh</div>
+            </div>
+            <div class="border-l border-cyan-800/50 pl-1 sm:pl-2">
+              <div class="text-[7px] sm:text-[9px] text-slate-500">電費</div>
+              <div id="currentCost" class="font-mono font-black text-cyan-400 text-[10px] sm:text-sm leading-tight">HK$ 253</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="sceneCardOptimal" role="button" tabindex="0" aria-label="套用慳電：7成飽+1級"
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
+          <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-semibold text-emerald-400">
+            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400"></span> 慳電模式
+          </div>
+          <div class="text-[9px] text-slate-500 mt-0.5 hidden sm:block">7成 · 1級</div>
+          <div class="mt-0.5 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
+            <div>
+              <div class="text-[7px] sm:text-[9px] text-slate-500">度數</div>
+              <div class="font-mono font-bold text-white text-[10px] sm:text-sm leading-tight">180 kWh</div>
+            </div>
+            <div class="border-l border-slate-700 pl-1 sm:pl-2">
+              <div class="text-[7px] sm:text-[9px] text-slate-500">電費</div>
+              <div class="font-mono font-black text-emerald-400 text-[10px] sm:text-sm leading-tight">HK$ 253</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="flex-1 flex flex-col lg:grid lg:grid-cols-12 relative w-full min-h-0 lg:min-h-[calc(100dvh-10rem)]">
+
+    <div class="lg:col-span-7 xl:col-span-8 relative flex flex-col h-auto lg:h-full lg:min-h-0 bg-slate-950 overflow-hidden shrink-0">
+
+      <div id="canvasContainer" class="w-full relative cursor-grab active:cursor-grabbing lg:flex-1 lg:h-full lg:min-h-0">
+
+        <div id="dragHint" class="absolute top-3 left-3 z-10 pointer-events-none hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full glass-soft text-slate-300 text-[11px] shadow-lg">
+          <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>拖曳轉角 · 滾輪放大</span>
+        </div>
+
+        <div id="statusHud" class="absolute top-12 left-3 z-10 pointer-events-none flex flex-col gap-1.5">
+          <div class="glass px-2.5 py-1.5 rounded-lg border border-slate-700/80 text-[11px] flex items-center gap-2">
+            <span id="airStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="text-slate-400">對流：</span>
+            <span id="airStatusText" class="font-bold text-emerald-300">通暢</span>
+          </div>
+          <div class="glass px-2.5 py-1.5 rounded-lg border border-slate-700/80 text-[11px] flex items-center gap-2">
+            <span id="compressorDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
+            <span class="text-slate-400">壓縮機：</span>
+            <span id="compressorLoadText" class="font-mono font-bold text-sky-300">正常 (40%)</span>
+          </div>
+          <div class="glass px-2.5 py-1.5 rounded-lg border border-slate-700/80 text-[11px] flex items-center gap-2">
+            <span id="leakWarnDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="text-slate-400">膠邊：</span>
+            <span id="sealStatusText" class="font-bold text-emerald-300">貼服</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="thermoFloatingBadge" class="relative z-10 w-full px-3 py-2.5 border-t border-slate-800/90 bg-slate-900/95">
+        <div class="flex items-stretch gap-2 sm:gap-3 max-w-lg mx-auto lg:mx-0">
+          <div class="flex-1 min-w-0 rounded-xl bg-cyan-500/10 border border-cyan-500/35 px-3 py-2.5 text-center">
+            <div class="text-[11px] font-bold text-cyan-300/90 tracking-wide">冷藏室</div>
+            <div id="fridgeTempDisplay" class="mt-1 text-2xl sm:text-3xl font-black text-cyan-300 font-mono leading-none">3.8°C</div>
+          </div>
+          <div class="flex-1 min-w-0 rounded-xl bg-sky-500/10 border border-sky-500/35 px-3 py-2.5 text-center">
+            <div class="text-[11px] font-bold text-sky-300/90 tracking-wide">冷凍室</div>
+            <div id="freezerTempDisplay" class="mt-1 text-2xl sm:text-3xl font-black text-sky-300 font-mono leading-none">-18.2°C</div>
+          </div>
+          <div class="flex items-center shrink-0">
+            <div id="thermoBadgePill" class="text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+              3~4°C 啱啱好
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="locBar" class="loc-bar relative z-20 w-full flex gap-1.5 justify-stretch p-2 border-t border-slate-800/90 bg-slate-950/95 overflow-x-auto">
+        <button id="locBtnCool" class="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 bg-cyan-600/30 border-2 border-cyan-500 text-white font-medium shadow-md">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-sm shrink-0"></span>
+          <div class="text-left min-w-0">
+            <div class="text-[9px] text-cyan-300 font-bold">推薦</div>
+            <div class="text-[11px] font-black truncate">陰涼通風</div>
+          </div>
+        </button>
+        <button id="locBtnStove" class="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white font-medium">
+          <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+          <div class="text-left min-w-0">
+            <div class="text-[9px] text-slate-400">熱源</div>
+            <div class="text-[11px] font-semibold truncate">近煮食爐</div>
+          </div>
+        </button>
+        <button id="locBtnSun" class="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white font-medium">
+          <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+          <div class="text-left min-w-0">
+            <div class="text-[9px] text-slate-400">日照</div>
+            <div class="text-[11px] font-semibold truncate">窗邊西晒</div>
+          </div>
+        </button>
+      </div>
+
+    </div>
+
+    <div class="lg:col-span-5 xl:col-span-4 glass border-t lg:border-t-0 lg:border-l border-slate-800/80 flex flex-col flex-1 lg:min-h-0 lg:overflow-y-auto custom-scrollbar p-3.5 sm:p-4 lg:p-5 space-y-3 pb-8">
+
+      <div class="bg-gradient-to-r from-teal-950/60 to-cyan-950/50 rounded-2xl p-4 border border-cyan-500/25">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            第三回 · 雪櫃
+          </span>
+          <span class="text-xs font-bold text-amber-300 flex items-center gap-1">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> 24小時長開
+          </span>
+        </div>
+        <h2 class="text-lg font-black text-white mt-2">雪櫃慳電秘笈</h2>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+          屋企最勤力員工，幫佢慳啖氣。
+        </p>
+      </div>
+
+      <div class="glass-soft rounded-2xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-2 text-xs font-bold text-cyan-300">
+            <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-mono text-[11px]">1</span>
+            <span>七成飽最好</span>
+          </span>
+          <span id="capacitySliderVal" class="text-base font-black font-mono text-cyan-400">70% · 啱啱好</span>
+        </div>
+        <input type="range" id="capacitySlider" min="30" max="100" value="70" step="5" class="w-full cursor-pointer">
+        <div class="flex justify-between text-[10px] text-slate-400">
+          <span>30% 偏空</span>
+          <span class="text-cyan-400 font-bold">70% 黃金</span>
+          <span class="text-rose-400 font-bold">100% 塞爆</span>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          塞太滿會阻冷氣孔，壓縮機更食電。
+        </p>
+      </div>
+
+      <div class="glass-soft rounded-2xl p-3.5 flex items-center justify-between gap-2">
+        <div class="pr-1 min-w-0">
+          <div class="flex items-center gap-2 text-xs font-bold text-amber-300">
+            <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-mono text-[11px]">2</span>
+            <span>熱嘢攤凍先入</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">熱湯滾餸直接入，雪櫃好辛苦。</p>
+        </div>
+        <button id="hotFoodBtn" class="px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 transition-all shrink-0">
+          已攤凍
+        </button>
+      </div>
+
+      <div class="glass-soft rounded-2xl p-3.5 flex items-center justify-between gap-2">
+        <div class="pr-1 min-w-0">
+          <div class="flex items-center gap-2 text-xs font-bold text-emerald-300">
+            <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono text-[11px]">3</span>
+            <span>檢查門邊膠邊</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">用紙夾住試；老化漏冷氣就費電。</p>
+        </div>
+        <button id="sealGasketBtn" class="px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 transition-all shrink-0">
+          膠邊好
+        </button>
+      </div>
+
+      <div class="glass-soft rounded-2xl p-3.5 flex items-center justify-between gap-2">
+        <div class="pr-1 min-w-0">
+          <div class="flex items-center gap-2 text-xs font-bold text-sky-300">
+            <span class="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-mono text-[11px]">4</span>
+            <span>少開門、快開快閂</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">開門前諗清楚，咪開住發夢。</p>
+        </div>
+        <button id="openHabitBtn" class="px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 transition-all shrink-0">
+          快開快閂
+        </button>
+      </div>
+
+      <div class="glass-soft rounded-2xl p-3.5 flex items-center justify-between gap-2">
+        <div class="pr-1 min-w-0">
+          <div class="flex items-center gap-2 text-xs font-bold text-rose-300">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i>
+            <span>頂部唔好擺嘢</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">頂同兩側要散熱；搬完靜置兩小時先插電。</p>
+        </div>
+        <button id="topClutterBtn" class="px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+          頂部清空
+        </button>
+      </div>
+
+      <div class="bg-gradient-to-br from-indigo-950/50 to-purple-950/40 rounded-2xl p-3.5 border border-indigo-500/30 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black text-indigo-300 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4 text-yellow-400"></i>
+            終極彩蛋
+          </span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 font-bold">EMSD</span>
+        </div>
+        <div class="flex items-center justify-between gap-2 bg-slate-900/70 p-2.5 rounded-xl border border-indigo-500/25">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-white">認住 1 級能源標籤</div>
+            <div class="text-[10px] text-slate-400">1級比5級慳約 40%</div>
+          </div>
+          <button id="energyGradeBtn" class="px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-emerald-600 text-white shadow transition-all shrink-0">1級標籤</button>
+        </div>
+        <div class="flex items-center justify-between gap-2 bg-slate-900/70 p-2.5 rounded-xl border border-indigo-500/25">
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-white">關拖板總掣</div>
+            <div class="text-[10px] text-slate-400">備用電一年可慳約 3%</div>
+          </div>
+          <button id="standbyPowerBtn" class="px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-purple-500/20 border border-purple-500/40 text-purple-300 transition-all shrink-0">總掣關 · 慳3%</button>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-emerald-950/50 to-cyan-950/40 border border-emerald-500/35 rounded-2xl p-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <i data-lucide="piggy-bank" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="text-[10px] text-emerald-300 font-medium">半年慳到</div>
+            <div id="sideSavingDisplay" class="text-base font-black text-emerald-400">HKD $422</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-[9px] text-slate-400">少排碳</div>
+          <div id="co2SavedDisplay" class="text-xs font-bold text-cyan-300">約 117 kg CO₂</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <a href="ac.html" class="flex-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all">
+          <i data-lucide="wind" class="w-3.5 h-3.5 text-sky-300"></i>
+          上一回：冷氣
+        </a>
+        <a href="index.html" class="flex-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
+          燈泡比較
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="quizModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="award" class="w-5 h-5 text-yellow-400"></i>
+          <h3 class="font-bold text-base text-white">雪櫃小測驗</h3>
+        </div>
+        <button id="quizModalCloseBtn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="quizQuestionContainer" class="space-y-4">
+        <div class="text-xs text-cyan-400 font-semibold" id="quizStep">第 1 / 4 題</div>
+        <p class="text-sm font-medium text-slate-200" id="quizQuestionText"></p>
+        <div id="quizOptions" class="space-y-2"></div>
+        <div id="quizFeedback" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button id="quizNextBtn" class="hidden px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition">下一題</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      isDoorOpen: false,
+      isXray: false,
+      capacityPct: 70,
+      isHotFoodIn: false,
+      isSealBroken: false,
+      isOpenFrequently: false,
+      locationMode: 'cool',
+      hasTopClutter: false,
+      energyGrade: 1,
+      cutStandbyPower: true,
+      activeScene: 'optimal',
+      fridgeTemp: 3.8,
+      freezerTemp: -18.2,
+      targetFridgeTemp: 3.8,
+      compressorLoadPct: 40,
+      costPerKwh: 1.406
+    };
+
+    const SCENE_PRESETS = {
+      careless: {
+        capacityPct: 100,
+        isHotFoodIn: true,
+        isSealBroken: true,
+        isOpenFrequently: true,
+        locationMode: 'stove',
+        hasTopClutter: true,
+        energyGrade: 5,
+        cutStandbyPower: false,
+        isDoorOpen: false,
+        isXray: false
+      },
+      optimal: {
+        capacityPct: 70,
+        isHotFoodIn: false,
+        isSealBroken: false,
+        isOpenFrequently: false,
+        locationMode: 'cool',
+        hasTopClutter: false,
+        energyGrade: 1,
+        cutStandbyPower: true,
+        isDoorOpen: false,
+        isXray: false
+      }
+    };
+
+    /* ==========================================================================
+       2. THREE.JS 3D SCENE: KITCHEN, REFRIGERATOR & COLD VORTEX FLOW
+       ========================================================================== */
+    let scene, camera, renderer, controls;
+    let kitchenGroup, fridgeGroup, fridgeDoorBottom, fridgeDoorTop;
+    let thermoGroup, thermoFluidMesh;
+    let stoveGroup, sunLightMesh, topClutterMesh, hotPotMesh;
+    let foodItemsGroup, coldLoopRibbonsGroup;
+    let ribbonPaths = [];
+    let coldLeakParticles, leakGeo, leakPositions;
+
+    function init3D() {
+      const container = document.getElementById('canvasContainer');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x070c18);
+      scene.fog = new THREE.FogExp2(0x070c18, 0.038);
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.set(2.6, 2.1, 3.8);
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // 4. OrbitControls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.target.set(0, 1.1, 0);
+      controls.maxDistance = 7.0;
+      controls.minDistance = 1.8;
+      controls.maxPolarAngle = Math.PI / 2.05;
+
+      // 5. Lighting
+      const ambLight = new THREE.AmbientLight(0x1e293b, 0.55);
+      scene.add(ambLight);
+
+      const kitchenCeilLight = new THREE.PointLight(0xffffff, 1.7, 8);
+      kitchenCeilLight.position.set(0, 2.9, 0.5);
+      kitchenCeilLight.castShadow = true;
+      scene.add(kitchenCeilLight);
+
+      // 6. Build Scene Objects
+      createKitchenArchitecture();
+      create3DRefrigerator();
+      create3DThermometer();
+      createColdAirflowVortexRibbons();
+      createColdLeakParticles();
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+    }
+
+    function createKitchenArchitecture() {
+      kitchenGroup = new THREE.Group();
+
+      // Floor (Kitchen Tiles)
+      const floorGeo = new THREE.PlaneGeometry(5.0, 4.4);
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45 });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      kitchenGroup.add(floor);
+
+      // Back Wall
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.75 });
+      const backWallGeo = new THREE.PlaneGeometry(5.0, 3.2);
+      const backWall = new THREE.Mesh(backWallGeo, wallMat);
+      backWall.position.set(0, 1.6, -1.8);
+      backWall.receiveShadow = true;
+      kitchenGroup.add(backWall);
+
+      // Left Wall with Kitchen Counter & Window
+      const leftWallGeo = new THREE.PlaneGeometry(4.4, 3.2);
+      const leftWall = new THREE.Mesh(leftWallGeo, wallMat);
+      leftWall.rotation.y = Math.PI / 2;
+      leftWall.position.set(-2.2, 1.6, 0);
+      leftWall.receiveShadow = true;
+      kitchenGroup.add(leftWall);
+
+      // Window Frame & Sun Beam Mesh (Right Wall)
+      const rightWall = new THREE.Mesh(leftWallGeo, wallMat);
+      rightWall.rotation.y = -Math.PI / 2;
+      rightWall.position.set(2.2, 1.6, 0);
+      kitchenGroup.add(rightWall);
+
+      const winGeo = new THREE.BoxGeometry(0.08, 1.4, 1.4);
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.3 });
+      const win = new THREE.Mesh(winGeo, winMat);
+      win.position.set(2.18, 1.8, 0.2);
+      kitchenGroup.add(win);
+
+      // Kitchen Counter on the Left
+      const counterBaseGeo = new THREE.BoxGeometry(1.2, 0.88, 2.4);
+      const counterMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+      const counterBase = new THREE.Mesh(counterBaseGeo, counterMat);
+      counterBase.position.set(-1.45, 0.44, 0.2);
+      counterBase.receiveShadow = true;
+      kitchenGroup.add(counterBase);
+
+      const counterTopGeo = new THREE.BoxGeometry(1.26, 0.08, 2.46);
+      const counterTopMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.2, metalness: 0.1 });
+      const counterTop = new THREE.Mesh(counterTopGeo, counterTopMat);
+      counterTop.position.set(-1.45, 0.92, 0.2);
+      counterTop.receiveShadow = true;
+      kitchenGroup.add(counterTop);
+
+      // Gas Stove / Oven Next to Refrigerator Location
+      stoveGroup = new THREE.Group();
+      stoveGroup.position.set(-1.4, 0.96, -0.6);
+
+      const stovePlates = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.18, 0.03, 24),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 })
+      );
+      stoveGroup.add(stovePlates);
+
+      // Flame Glow Ring (Visible when stove is heated)
+      const flameGeo = new THREE.TorusGeometry(0.16, 0.02, 12, 24);
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+      const flame = new THREE.Mesh(flameGeo, flameMat);
+      flame.rotation.x = Math.PI / 2;
+      flame.position.y = 0.02;
+      stoveGroup.add(flame);
+      stoveGroup.flame = flame;
+      kitchenGroup.add(stoveGroup);
+
+      // Sunbeam Visual Cone (Visible in sun mode)
+      const sunGeo = new THREE.ConeGeometry(1.6, 3.8, 24, 1, true);
+      const sunMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.0,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      sunLightMesh = new THREE.Mesh(sunGeo, sunMat);
+      sunLightMesh.position.set(1.4, 1.8, 0.2);
+      sunLightMesh.rotation.z = -Math.PI / 3;
+      kitchenGroup.add(sunLightMesh);
+
+      scene.add(kitchenGroup);
+    }
+
+    function create3DRefrigerator() {
+      fridgeGroup = new THREE.Group();
+      fridgeGroup.position.set(0.0, 0.0, -0.7); // Default cool shaded spot
+
+      // Main Outer Cabinet
+      const cabinetGeo = new THREE.BoxGeometry(0.9, 1.9, 0.85);
+      const cabinetMat = new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        roughness: 0.35,
+        metalness: 0.25
+      });
+      const cabinet = new THREE.Mesh(cabinetGeo, cabinetMat);
+      cabinet.position.y = 0.95;
+      cabinet.castShadow = true;
+      cabinet.receiveShadow = true;
+      fridgeGroup.add(cabinet);
+      fridgeGroup.cabinetMat = cabinetMat;
+
+      // Inner Cavity (White Plastic)
+      const innerGeo = new THREE.BoxGeometry(0.78, 1.78, 0.72);
+      const innerMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+      const inner = new THREE.Mesh(innerGeo, innerMat);
+      inner.position.set(0, 0.95, 0.04);
+      fridgeGroup.add(inner);
+
+      // Center Divider (Separating Top Freezer & Bottom Fridge)
+      const dividerGeo = new THREE.BoxGeometry(0.78, 0.06, 0.72);
+      const dividerMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8 });
+      const divider = new THREE.Mesh(dividerGeo, dividerMat);
+      divider.position.set(0, 1.35, 0.04);
+      fridgeGroup.add(divider);
+
+      // Shelves in Bottom Fridge Compartment
+      const shelfMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.45,
+        roughness: 0.1,
+        transmission: 0.8
+      });
+      [0.55, 0.95].forEach(yPos => {
+        const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.02, 0.65), shelfMat);
+        shelf.position.set(0, yPos, 0.04);
+        fridgeGroup.add(shelf);
+      });
+
+      // Top Freezer Door (Pivot at top left edge)
+      fridgeDoorTop = new THREE.Group();
+      fridgeDoorTop.position.set(-0.45, 1.62, 0.425);
+
+      const doorTopMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.48, 0.08),
+        cabinetMat
+      );
+      doorTopMesh.position.set(0.45, 0, 0.04);
+      fridgeDoorTop.add(doorTopMesh);
+      fridgeGroup.add(fridgeDoorTop);
+
+      // Bottom Fridge Door (Pivot at bottom left edge)
+      fridgeDoorBottom = new THREE.Group();
+      fridgeDoorBottom.position.set(-0.45, 0.68, 0.425);
+
+      const doorBottomMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 1.28, 0.08),
+        cabinetMat
+      );
+      doorBottomMesh.position.set(0.45, 0, 0.04);
+      fridgeDoorBottom.add(doorBottomMesh);
+
+      // Handle on bottom door
+      const handleMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.015, 0.015, 0.4, 16),
+        new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 })
+      );
+      handleMesh.position.set(0.82, 0.2, 0.1);
+      fridgeDoorBottom.add(handleMesh);
+      fridgeGroup.add(fridgeDoorBottom);
+
+      // Energy Efficiency Sticker Badge (EMSD Grade 1 / 5) on Upper Door
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 128;
+      labelCanvas.height = 128;
+      const lCtx = labelCanvas.getContext('2d');
+      drawEnergyBadgeCanvas(lCtx, 1);
+      const labelTex = new THREE.CanvasTexture(labelCanvas);
+      const labelMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.18, 0.18),
+        new THREE.MeshBasicMaterial({ map: labelTex })
+      );
+      labelMesh.position.set(0.3, 0.05, 0.085);
+      fridgeDoorTop.add(labelMesh);
+      fridgeGroup.labelMesh = labelMesh;
+      fridgeGroup.labelCanvas = labelCanvas;
+      fridgeGroup.labelTex = labelTex;
+
+      // Food items container
+      createFoodItems();
+
+      // Hot pot object (steaming soup)
+      const potGeo = new THREE.CylinderGeometry(0.14, 0.12, 0.14, 24);
+      const potMat = new THREE.MeshStandardMaterial({ color: 0xe11d48, metalness: 0.7 });
+      hotPotMesh = new THREE.Mesh(potGeo, potMat);
+      hotPotMesh.position.set(0.15, 0.64, 0.1);
+      hotPotMesh.visible = false;
+      fridgeGroup.add(hotPotMesh);
+
+      // Top clutter objects (Microwave & boxes stacked on fridge)
+      topClutterMesh = new THREE.Group();
+      const microwave = new THREE.Mesh(
+        new THREE.BoxGeometry(0.65, 0.32, 0.55),
+        new THREE.MeshStandardMaterial({ color: 0x334155 })
+      );
+      microwave.position.set(0, 2.05, 0);
+      topClutterMesh.add(microwave);
+      topClutterMesh.visible = false;
+      fridgeGroup.add(topClutterMesh);
+
+      scene.add(fridgeGroup);
+    }
+
+    function drawEnergyBadgeCanvas(ctx, grade) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.fillStyle = grade === 1 ? '#10b981' : '#f59e0b';
+      ctx.fillRect(8, 8, 112, 42);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(grade === 1 ? 'GRADE 1' : 'GRADE 5', 64, 28);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText(grade === 1 ? '1級 節能精英' : '5級 極耗電', 64, 75);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('EMSD 機電署', 64, 102);
+    }
+
+    function createFoodItems() {
+      foodItemsGroup = new THREE.Group();
+      const colors = [0x22c55e, 0xef4444, 0x3b82f6, 0xf59e0b, 0xa855f7, 0x14b8a6];
+
+      // Define grid coordinates across 3 shelves
+      const itemPositions = [
+        // Bottom vegetable crisper (y = 0.22)
+        [-0.2, 0.22, 0.1], [0.0, 0.22, 0.1], [0.2, 0.22, 0.1],
+        [-0.2, 0.22, -0.15], [0.0, 0.22, -0.15], [0.2, 0.22, -0.15],
+        // Middle shelf (y = 0.65)
+        [-0.22, 0.65, 0.12], [-0.05, 0.65, 0.12], [0.15, 0.65, 0.12],
+        [-0.22, 0.65, -0.15], [-0.05, 0.65, -0.15], [0.15, 0.65, -0.15],
+        // Top shelf (y = 1.05)
+        [-0.2, 1.05, 0.12], [0.0, 1.05, 0.12], [0.2, 1.05, 0.12],
+        [-0.2, 1.05, -0.15], [0.0, 1.05, -0.15], [0.2, 1.05, -0.15]
+      ];
+
+      foodItemsGroup.items = [];
+      itemPositions.forEach((pos, idx) => {
+        const h = 0.12 + Math.random() * 0.08;
+        const geo = idx % 2 === 0
+          ? new THREE.BoxGeometry(0.12, h, 0.12)
+          : new THREE.CylinderGeometry(0.06, 0.06, h, 16);
+        const mat = new THREE.MeshStandardMaterial({
+          color: colors[idx % colors.length],
+          roughness: 0.3
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(...pos);
+        foodItemsGroup.add(mesh);
+        foodItemsGroup.items.push(mesh);
+      });
+
+      fridgeGroup.add(foodItemsGroup);
+      updateFoodItemDensity();
+    }
+
+    function updateFoodItemDensity() {
+      if (!foodItemsGroup || !foodItemsGroup.items) return;
+      const count = foodItemsGroup.items.length;
+      // Map capacity percentage to active item count
+      const activeCount = Math.round((state.capacityPct / 100) * count);
+      foodItemsGroup.items.forEach((item, idx) => {
+        item.visible = idx < activeCount;
+      });
+    }
+
+    function createColdAirflowVortexRibbons() {
+      coldLoopRibbonsGroup = new THREE.Group();
+
+      // Continuous loop inside fridge cold chamber:
+      // Loop 1: Top air duct -> downwards through middle shelf -> front door -> bottom crisper -> back duct upwards
+      // Loop 2: Back left duct -> diagonal cross shelf -> back right wall
+      const curveDefinitions = [
+        [
+          new THREE.Vector3(0.0, 1.25, -0.22),
+          new THREE.Vector3(0.22, 1.05, -0.05),
+          new THREE.Vector3(0.15, 0.65, 0.18),
+          new THREE.Vector3(-0.15, 0.35, 0.18),
+          new THREE.Vector3(-0.25, 0.25, -0.15),
+          new THREE.Vector3(0.0, 0.75, -0.25)
+        ],
+        [
+          new THREE.Vector3(-0.18, 1.25, -0.2),
+          new THREE.Vector3(-0.22, 0.85, 0.12),
+          new THREE.Vector3(0.0, 0.55, 0.2),
+          new THREE.Vector3(0.22, 0.45, -0.1),
+          new THREE.Vector3(0.0, 0.95, -0.25)
+        ]
+      ];
+
+      ribbonPaths = curveDefinitions.map((points, curveIdx) => {
+        const curve = new THREE.CatmullRomCurve3(points, true);
+        const tubeGeo = new THREE.TubeGeometry(curve, 80, 0.016, 8, true);
+        const tubeMat = new THREE.MeshBasicMaterial({
+          color: curveIdx === 0 ? 0x38bdf8 : 0x22d3ee,
+          transparent: true,
+          opacity: 0.65,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+        coldLoopRibbonsGroup.add(tubeMesh);
+
+        // Pulse airflow beads traveling on curve
+        const pulseCount = 6;
+        const pulseBeads = [];
+        for (let p = 0; p < pulseCount; p++) {
+          const beadGeo = new THREE.SphereGeometry(0.038, 12, 12);
+          const beadMat = new THREE.MeshBasicMaterial({
+            color: 0xe0f2fe,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending
+          });
+          const beadMesh = new THREE.Mesh(beadGeo, beadMat);
+          coldLoopRibbonsGroup.add(beadMesh);
+          pulseBeads.push({
+            mesh: beadMesh,
+            progress: p / pulseCount
+          });
+        }
+
+        return { curve, tubeMesh, pulseBeads };
+      });
+
+      fridgeGroup.add(coldLoopRibbonsGroup);
+    }
+
+    function createColdLeakParticles() {
+      const PARTICLE_COUNT = 250;
+      leakGeo = new THREE.BufferGeometry();
+      leakPositions = new Float32Array(PARTICLE_COUNT * 3);
+      coldLeakParticles = [];
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        resetLeakParticle(i);
+      }
+
+      leakGeo.setAttribute('position', new THREE.BufferAttribute(leakPositions, 3));
+      const leakMat = new THREE.PointsMaterial({
+        color: 0x67e8f9,
+        size: 0.045,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const particlePoints = new THREE.Points(leakGeo, leakMat);
+      particlePoints.visible = false;
+      fridgeGroup.add(particlePoints);
+      coldLeakParticles.mesh = particlePoints;
+    }
+
+    function resetLeakParticle(i) {
+      const i3 = i * 3;
+      // Emit from door gap edges
+      leakPositions[i3] = (Math.random() - 0.5) * 0.8;
+      leakPositions[i3 + 1] = 0.2 + Math.random() * 1.4;
+      leakPositions[i3 + 2] = 0.45;
+
+      coldLeakParticles[i] = {
+        vx: (Math.random() - 0.5) * 0.012,
+        vy: -0.015 - Math.random() * 0.015, // Cold heavy air sinks to kitchen floor
+        vz: 0.02 + Math.random() * 0.018,
+        life: Math.random() * 90
+      };
+    }
+
+    function create3DThermometer() {
+      thermoGroup = new THREE.Group();
+      thermoGroup.position.set(-1.45, 0.96, 0.9); // Standing on kitchen counter
+
+      const baseGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.03, 24);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 });
+      const base = new THREE.Mesh(baseGeo, baseMat);
+      thermoGroup.add(base);
+
+      // Backplate
+      const plateGeo = new THREE.BoxGeometry(0.12, 0.75, 0.02);
+      const plateMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+      const plate = new THREE.Mesh(plateGeo, plateMat);
+      plate.position.set(0, 0.4, -0.02);
+      thermoGroup.add(plate);
+
+      // Scale marks
+      for (let i = 0; i <= 5; i++) {
+        const markGeo = new THREE.BoxGeometry(0.07, 0.008, 0.005);
+        const markMat = new THREE.MeshBasicMaterial({ color: i >= 4 ? 0xef4444 : 0x0284c7 });
+        const mark = new THREE.Mesh(markGeo, markMat);
+        mark.position.set(0, 0.16 + i * 0.1, 0);
+        thermoGroup.add(mark);
+      }
+
+      // Bulb reservoir
+      const resGeo = new THREE.SphereGeometry(0.048, 16, 16);
+      const resMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1 });
+      const res = new THREE.Mesh(resGeo, resMat);
+      res.position.set(0, 0.09, 0.02);
+      thermoGroup.add(res);
+
+      // Glass tube
+      const tubeGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.62, 16);
+      const tubeMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.35,
+        transmission: 0.9,
+        roughness: 0.1
+      });
+      const tube = new THREE.Mesh(tubeGeo, tubeMat);
+      tube.position.set(0, 0.4, 0.02);
+      thermoGroup.add(tube);
+
+      // Dynamic Fluid Column
+      const colGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.5, 16);
+      thermoFluidMesh = new THREE.Mesh(colGeo, resMat);
+      thermoFluidMesh.position.set(0, 0.3, 0.02);
+      thermoGroup.add(thermoFluidMesh);
+
+      scene.add(thermoGroup);
+    }
+
+    function applyEnvironmentPlacement() {
+      if (state.locationMode === 'cool') {
+        fridgeGroup.position.set(0.0, 0.0, -0.7); // Center back, cool shaded
+        if (stoveGroup && stoveGroup.flame) stoveGroup.flame.visible = false;
+        if (sunLightMesh) sunLightMesh.material.opacity = 0.0;
+      } else if (state.locationMode === 'stove') {
+        fridgeGroup.position.set(-0.7, 0.0, -0.7); // Right beside the hot cooking stove
+        if (stoveGroup && stoveGroup.flame) stoveGroup.flame.visible = true;
+        if (sunLightMesh) sunLightMesh.material.opacity = 0.0;
+      } else if (state.locationMode === 'sun') {
+        fridgeGroup.position.set(1.1, 0.0, 0.2); // Right under the west window sunbeam
+        if (stoveGroup && stoveGroup.flame) stoveGroup.flame.visible = false;
+        if (sunLightMesh) sunLightMesh.material.opacity = 0.38;
+      }
+    }
+
+    function updateLeakParticles() {
+      if (!coldLeakParticles || !coldLeakParticles.mesh) return;
+      const isLeaking = state.isDoorOpen || state.isSealBroken;
+      coldLeakParticles.mesh.visible = isLeaking;
+      if (!isLeaking) return;
+
+      const pos = leakGeo.attributes.position.array;
+      for (let i = 0; i < 250; i++) {
+        const i3 = i * 3;
+        const p = coldLeakParticles[i];
+        p.life++;
+
+        pos[i3] += p.vx;
+        pos[i3 + 1] += p.vy;
+        pos[i3 + 2] += p.vz;
+
+        if (pos[i3 + 1] < 0.02 || p.life > 90) {
+          resetLeakParticle(i);
+        }
+      }
+      leakGeo.attributes.position.needsUpdate = true;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (controls) controls.update();
+
+      // Smooth Door Opening/Closing Animation
+      const targetDoorAngle = state.isDoorOpen ? -1.75 : 0.0;
+      if (fridgeDoorBottom) {
+        fridgeDoorBottom.rotation.y += (targetDoorAngle - fridgeDoorBottom.rotation.y) * 0.1;
+      }
+      if (fridgeDoorTop) {
+        fridgeDoorTop.rotation.y += (targetDoorAngle - fridgeDoorTop.rotation.y) * 0.1;
+      }
+
+      // X-ray material transparency
+      if (fridgeGroup && fridgeGroup.cabinetMat) {
+        fridgeGroup.cabinetMat.transparent = state.isXray;
+        fridgeGroup.cabinetMat.opacity = state.isXray ? 0.28 : 1.0;
+      }
+
+      // Cold Ribbon Flow Loop
+      // Blocked / frozen when capacity == 100% or door is open
+      const isFlowBlocked = state.capacityPct >= 95;
+      const flowSpeed = isFlowBlocked ? 0.0005 : (state.capacityPct <= 75 ? 0.007 : 0.003);
+
+      if (coldLoopRibbonsGroup) {
+        coldLoopRibbonsGroup.visible = (state.isDoorOpen || state.isXray) && !isFlowBlocked;
+        ribbonPaths.forEach(p => {
+          p.tubeMesh.material.opacity = isFlowBlocked ? 0.15 : 0.65;
+          p.pulseBeads.forEach(b => {
+            b.progress = (b.progress + flowSpeed) % 1.0;
+            const pt = p.curve.getPointAt(b.progress);
+            b.mesh.position.copy(pt);
+          });
+        });
+      }
+
+      updateLeakParticles();
+
+      // Smooth thermometer height adjustment
+      state.fridgeTemp += (state.targetFridgeTemp - state.fridgeTemp) * 0.04;
+      if (thermoFluidMesh) {
+        // Map 0°C ~ 12°C to column height
+        const norm = Math.max(0, Math.min(1, state.fridgeTemp / 12));
+        const targetH = 0.06 + norm * 0.65;
+        thermoFluidMesh.scale.y = targetH;
+        thermoFluidMesh.position.y = 0.1 + (targetH * 0.5);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const c = document.getElementById('canvasContainer');
+      camera.aspect = c.clientWidth / c.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(c.clientWidth, c.clientHeight);
+    }
+
+    function updateCalculationsAndUI() {
+      // 1. Temperature Physics Calculation
+      let temp = 3.8; // Baseline optimal 3.8°C
+
+      if (state.capacityPct > 80) {
+        temp += (state.capacityPct - 80) * 0.08; // Blocked air holes cause temperature rise
+      }
+      if (state.isHotFoodIn) temp += 3.2;      // Hot soup elevates internal chamber
+      if (state.isSealBroken) temp += 2.4;     // Broken gasket leaks cold air
+      if (state.locationMode === 'stove') temp += 1.8;
+      if (state.locationMode === 'sun') temp += 2.2;
+      if (state.isDoorOpen) temp += 4.5;
+      if (state.hasTopClutter) temp += 0.8;
+
+      state.targetFridgeTemp = Math.min(14.0, temp);
+
+      // 2. Electricity & Compressor Load Calculation (6-Month Baseline)
+      // Standard 1-Grade Refrigerator runs ~1.0 kWh/day (~180 kWh/half-year)
+      let baseDailyKwh = state.energyGrade === 1 ? 1.0 : 1.65; // Grade 5 consumes 65% more
+
+      let loadFactor = 1.0;
+
+      // 70% rule: 70% is optimal 1.0x; 100% full adds 35% load
+      if (state.capacityPct > 70) {
+        loadFactor += ((state.capacityPct - 70) / 30) * 0.35;
+      }
+
+      if (state.isHotFoodIn) loadFactor += 0.25;
+      if (state.isSealBroken) loadFactor += 0.38;
+      if (state.isOpenFrequently) loadFactor += 0.20;
+      if (state.locationMode === 'stove') loadFactor += 0.28;
+      if (state.locationMode === 'sun') loadFactor += 0.32;
+      if (state.hasTopClutter) loadFactor += 0.12;
+
+      // Easter egg: Standby power saves 3%
+      let standbyDiscount = state.cutStandbyPower ? 0.03 : 0.0;
+
+      const days = 182.5; // Six months
+      const dailyKwh = baseDailyKwh * loadFactor * (1 - standbyDiscount);
+      const currentKwh = Math.round(dailyKwh * days);
+      const currentCost = Math.round(currentKwh * state.costPerKwh);
+
+      // Careless baseline (100% full, stove side, bad seal, grade 5):
+      const badDailyKwh = 1.65 * (1.0 + 0.35 + 0.25 + 0.38 + 0.28) * days;
+      const badKwh = Math.round(badDailyKwh);
+      const badCost = Math.round(badKwh * state.costPerKwh);
+
+      const savedCost = Math.max(0, badCost - currentCost);
+      const co2Saved = Math.round((badKwh - currentKwh) * 0.39);
+
+      // Update Dashboard Numbers
+      document.getElementById('currentKwh').innerText = `${currentKwh} kWh`;
+      document.getElementById('currentCost').innerText = `HK$ ${currentCost.toLocaleString()}`;
+      document.getElementById('benchBadKwh').innerText = `${badKwh} kWh`;
+      document.getElementById('benchBadCost').innerText = `HK$ ${badCost.toLocaleString()}`;
+
+      document.getElementById('sideSavingDisplay').innerText = `HKD $${savedCost.toLocaleString()}`;
+      document.getElementById('co2SavedDisplay').innerText = `約 ${co2Saved} kg CO₂`;
+
+      // Update Floating HUD telemetry
+      document.getElementById('fridgeTempDisplay').innerText = `${state.targetFridgeTemp.toFixed(1)}°C`;
+      document.getElementById('freezerTempDisplay').innerText = `${(-18.2 + (state.targetFridgeTemp - 3.8) * 0.5).toFixed(1)}°C`;
+
+      // Telemetry pill
+      const pill = document.getElementById('thermoBadgePill');
+      if (state.targetFridgeTemp <= 4.5) {
+        pill.innerText = "3~4°C 啱啱好";
+        pill.className = "text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap";
+      } else if (state.targetFridgeTemp <= 7.0) {
+        pill.innerText = "偏高 · 食電";
+        pill.className = "text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap";
+      } else {
+        pill.innerText = "太熱！";
+        pill.className = "text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse whitespace-nowrap";
+      }
+
+      // Airflow status banner updates
+      const airDot = document.getElementById('airStatusDot');
+      const airText = document.getElementById('airStatusText');
+      if (state.capacityPct >= 95) {
+        airDot.className = "w-2 h-2 rounded-full bg-rose-500 animate-pulse";
+        airText.innerText = "塞爆 · 對流唔到";
+        airText.className = "font-bold text-rose-400";
+      } else if (state.capacityPct >= 80) {
+        airDot.className = "w-2 h-2 rounded-full bg-amber-400";
+        airText.innerText = "偏滿 · 對流弱";
+        airText.className = "font-bold text-amber-300";
+      } else {
+        airDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        airText.innerText = "通暢";
+        airText.className = "font-bold text-emerald-300";
+      }
+
+      // Compressor load display
+      const compText = document.getElementById('compressorLoadText');
+      const compDot = document.getElementById('compressorDot');
+      const loadPct = Math.round(loadFactor * 40);
+      compText.innerText = `${loadPct > 80 ? '超載' : '正常'} (${loadPct}%)`;
+      compDot.className = `w-2 h-2 rounded-full ${loadPct > 80 ? 'bg-rose-500 animate-pulse' : 'bg-sky-400'}`;
+
+      // Seal status display
+      const sealText = document.getElementById('sealStatusText');
+      const sealDot = document.getElementById('leakWarnDot');
+      if (state.isSealBroken) {
+        sealText.innerText = "漏冷氣";
+        sealText.className = "font-bold text-rose-400";
+        sealDot.className = "w-2 h-2 rounded-full bg-rose-500 animate-ping";
+      } else {
+        sealText.innerText = "貼服";
+        sealText.className = "font-bold text-emerald-300";
+        sealDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+      }
+
+      if (typeof updateSceneCardStyles === 'function') updateSceneCardStyles();
+    }
+
+    function matchesPreset(name) {
+      const p = SCENE_PRESETS[name];
+      if (!p) return false;
+      return state.capacityPct === p.capacityPct
+        && state.isHotFoodIn === p.isHotFoodIn
+        && state.isSealBroken === p.isSealBroken
+        && state.isOpenFrequently === p.isOpenFrequently
+        && state.locationMode === p.locationMode
+        && state.hasTopClutter === p.hasTopClutter
+        && state.energyGrade === p.energyGrade
+        && state.cutStandbyPower === p.cutStandbyPower;
+    }
+
+    function detectActiveScene() {
+      if (matchesPreset('careless')) return 'careless';
+      if (matchesPreset('optimal')) return 'optimal';
+      return 'current';
+    }
+
+    function updateSceneCardStyles() {
+      state.activeScene = detectActiveScene();
+      const cards = {
+        careless: document.getElementById('sceneCardCareless'),
+        current: document.getElementById('sceneCardCurrent'),
+        optimal: document.getElementById('sceneCardOptimal')
+      };
+      const base = "scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all hover:scale-[1.02] active:scale-[0.98] select-none ";
+      if (cards.careless) {
+        cards.careless.className = base + (state.activeScene === 'careless'
+          ? "border-2 border-rose-500/90 opacity-100 shadow-lg shadow-rose-900/20"
+          : "border border-slate-700/80 opacity-85");
+      }
+      if (cards.current) {
+        cards.current.className = base + (state.activeScene === 'current'
+          ? "border-2 border-cyan-500/90 opacity-100 shadow-lg shadow-cyan-900/20"
+          : "border border-slate-700/80 opacity-85");
+      }
+      if (cards.optimal) {
+        cards.optimal.className = base + (state.activeScene === 'optimal'
+          ? "border-2 border-emerald-500/90 opacity-100 shadow-lg shadow-emerald-900/20"
+          : "border border-slate-700/80 opacity-85");
+      }
+    }
+
+    function syncControlWidgets() {
+      const capSlider = document.getElementById('capacitySlider');
+      if (capSlider) {
+        capSlider.value = state.capacityPct;
+        let note = " · 啱啱好";
+        if (state.capacityPct >= 95) note = " · 塞爆";
+        else if (state.capacityPct > 70) note = " · 偏滿";
+        else if (state.capacityPct < 50) note = " · 偏空";
+        const cv = document.getElementById('capacitySliderVal');
+        if (cv) cv.innerText = `${state.capacityPct}%${note}`;
+      }
+
+      const doorBtn = document.getElementById('doorToggleBtn');
+      const doorText = document.getElementById('doorToggleText');
+      if (doorBtn && doorText) {
+        if (state.isDoorOpen) {
+          doorBtn.className = "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-all active:scale-95";
+          doorText.innerText = "門開";
+        } else {
+          doorBtn.className = "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95";
+          doorText.innerText = "開門";
+        }
+      }
+
+      const xrayBtn = document.getElementById('xrayToggleBtn');
+      const xrayText = document.getElementById('xrayToggleText');
+      if (xrayBtn && xrayText) {
+        xrayText.innerText = state.isXray ? "透視" : "透視";
+        xrayBtn.className = state.isXray
+          ? "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-600 text-white transition-all active:scale-95"
+          : "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 transition-all active:scale-95";
+      }
+
+      const hotFoodBtn = document.getElementById('hotFoodBtn');
+      if (hotFoodBtn) {
+        if (state.isHotFoodIn) {
+          hotFoodBtn.innerText = "熱嘢直接入";
+          hotFoodBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-rose-600 text-white shadow transition-all shrink-0";
+        } else {
+          hotFoodBtn.innerText = "已攤凍";
+          hotFoodBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 transition-all shrink-0";
+        }
+      }
+
+      const sealBtn = document.getElementById('sealGasketBtn');
+      if (sealBtn) {
+        if (state.isSealBroken) {
+          sealBtn.innerText = "膠邊漏";
+          sealBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-rose-600 text-white shadow transition-all shrink-0";
+        } else {
+          sealBtn.innerText = "膠邊好";
+          sealBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 transition-all shrink-0";
+        }
+      }
+
+      const openHabitBtn = document.getElementById('openHabitBtn');
+      if (openHabitBtn) {
+        if (state.isOpenFrequently) {
+          openHabitBtn.innerText = "成日開";
+          openHabitBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-amber-600 text-white shadow transition-all shrink-0";
+        } else {
+          openHabitBtn.innerText = "快開快閂";
+          openHabitBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 transition-all shrink-0";
+        }
+      }
+
+      const topClutterBtn = document.getElementById('topClutterBtn');
+      if (topClutterBtn) {
+        if (state.hasTopClutter) {
+          topClutterBtn.innerText = "頂部有雜物";
+          topClutterBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-rose-600 text-white shadow shrink-0";
+        } else {
+          topClutterBtn.innerText = "頂部清空";
+          topClutterBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0";
+        }
+      }
+
+      const gradeBtn = document.getElementById('energyGradeBtn');
+      if (gradeBtn) {
+        gradeBtn.innerText = `${state.energyGrade}級標籤`;
+        gradeBtn.className = state.energyGrade === 1
+          ? "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-emerald-600 text-white shadow transition-all shrink-0"
+          : "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-amber-600 text-white shadow transition-all shrink-0";
+      }
+
+      const standbyBtn = document.getElementById('standbyPowerBtn');
+      if (standbyBtn) {
+        if (state.cutStandbyPower) {
+          standbyBtn.innerText = "總掣關 · 慳3%";
+          standbyBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-purple-500/20 border border-purple-500/40 text-purple-300 transition-all shrink-0";
+        } else {
+          standbyBtn.innerText = "拖板長開";
+          standbyBtn.className = "px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700 transition-all shrink-0";
+        }
+      }
+
+      if (hotPotMesh) hotPotMesh.visible = state.isHotFoodIn;
+      if (topClutterMesh) topClutterMesh.visible = state.hasTopClutter;
+      if (fridgeGroup && fridgeGroup.labelCanvas) {
+        const ctx = fridgeGroup.labelCanvas.getContext('2d');
+        drawEnergyBadgeCanvas(ctx, state.energyGrade);
+        fridgeGroup.labelTex.needsUpdate = true;
+      }
+      updateFoodItemDensity();
+      if (typeof window.syncLocationButtons === 'function') window.syncLocationButtons(false);
+      else applyEnvironmentPlacement();
+    }
+
+    function applyScenePreset(name) {
+      if (name === 'current') {
+        state.activeScene = 'current';
+        updateSceneCardStyles();
+        return;
+      }
+      const p = SCENE_PRESETS[name];
+      if (!p) return;
+      Object.keys(p).forEach(k => { state[k] = p[k]; });
+      syncControlWidgets();
+      updateCalculationsAndUI();
+    }
+
+
+    window.onload = function() {
+      init3D();
+      if (window.lucide) lucide.createIcons();
+
+      const doorBtn = document.getElementById('doorToggleBtn');
+      doorBtn.addEventListener('click', () => {
+        state.isDoorOpen = !state.isDoorOpen;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      const xrayBtn = document.getElementById('xrayToggleBtn');
+      xrayBtn.addEventListener('click', () => {
+        state.isXray = !state.isXray;
+        syncControlWidgets();
+      });
+
+      const capSlider = document.getElementById('capacitySlider');
+      capSlider.addEventListener('input', (e) => {
+        state.capacityPct = parseInt(e.target.value, 10);
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      document.getElementById('hotFoodBtn').addEventListener('click', () => {
+        state.isHotFoodIn = !state.isHotFoodIn;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      document.getElementById('sealGasketBtn').addEventListener('click', () => {
+        state.isSealBroken = !state.isSealBroken;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      document.getElementById('openHabitBtn').addEventListener('click', () => {
+        state.isOpenFrequently = !state.isOpenFrequently;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      document.getElementById('topClutterBtn').addEventListener('click', () => {
+        state.hasTopClutter = !state.hasTopClutter;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      const locBtnCool = document.getElementById('locBtnCool');
+      const locBtnStove = document.getElementById('locBtnStove');
+      const locBtnSun = document.getElementById('locBtnSun');
+      const baseLoc = "flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 font-medium ";
+
+      function syncLocationButtons(doUpdate = true) {
+        [locBtnCool, locBtnStove, locBtnSun].forEach(b => {
+          b.className = baseLoc + "bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white";
+        });
+        if (state.locationMode === 'cool') {
+          locBtnCool.className = baseLoc + "bg-cyan-600/30 border-2 border-cyan-500 text-white shadow-md";
+        } else if (state.locationMode === 'stove') {
+          locBtnStove.className = baseLoc + "bg-amber-600/30 border-2 border-amber-500 text-white shadow-md";
+        } else if (state.locationMode === 'sun') {
+          locBtnSun.className = baseLoc + "bg-rose-600/30 border-2 border-rose-500 text-white shadow-md";
+        }
+        applyEnvironmentPlacement();
+        if (doUpdate) updateCalculationsAndUI();
+      }
+      window.syncLocationButtons = syncLocationButtons;
+
+      locBtnCool.addEventListener('click', () => { state.locationMode = 'cool'; syncLocationButtons(); });
+      locBtnStove.addEventListener('click', () => { state.locationMode = 'stove'; syncLocationButtons(); });
+      locBtnSun.addEventListener('click', () => { state.locationMode = 'sun'; syncLocationButtons(); });
+
+      document.getElementById('energyGradeBtn').addEventListener('click', () => {
+        state.energyGrade = state.energyGrade === 1 ? 5 : 1;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      document.getElementById('standbyPowerBtn').addEventListener('click', () => {
+        state.cutStandbyPower = !state.cutStandbyPower;
+        syncControlWidgets();
+        updateCalculationsAndUI();
+      });
+
+      const quizModal = document.getElementById('quizModal');
+      const quizOpenBtn = document.getElementById('quizModalOpenBtn');
+      const quizCloseBtn = document.getElementById('quizModalCloseBtn');
+      const quizNextBtn = document.getElementById('quizNextBtn');
+
+      if (quizOpenBtn && quizModal) {
+        quizOpenBtn.addEventListener('click', () => {
+          quizModal.classList.remove('hidden');
+          quizModal.classList.add('flex');
+          currentQuizIndex = 0;
+          quizScore = 0;
+          renderQuizQuestion();
+        });
+      }
+      if (quizCloseBtn && quizModal) {
+        quizCloseBtn.addEventListener('click', () => {
+          quizModal.classList.add('hidden');
+          quizModal.classList.remove('flex');
+        });
+      }
+      if (quizNextBtn) {
+        quizNextBtn.addEventListener('click', () => {
+          currentQuizIndex++;
+          if (currentQuizIndex < quizQuestions.length) {
+            renderQuizQuestion();
+          } else {
+            const container = document.getElementById('quizQuestionContainer');
+            container.innerHTML = `
+              <div class="text-center py-6 space-y-3">
+                <div class="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 mx-auto flex items-center justify-center text-3xl font-black">
+                  ${quizScore}/${quizQuestions.length}
+                </div>
+                <h4 class="text-base font-bold text-white">完成！</h4>
+                <p class="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                  ${quizScore === quizQuestions.length ? '好叻！記住七成飽、陰涼處、快開快閂。' : '唔錯！雪櫃唔好塞爆，留位對流最慳電。'}
+                </p>
+                <button onclick="currentQuizIndex = 0; quizScore = 0; renderQuizQuestion();" class="mt-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition">
+                  再玩一次
+                </button>
+              </div>
+            `;
+            quizNextBtn.classList.add('hidden');
+          }
+        });
+      }
+
+      function bindSceneCard(el, scene) {
+        if (!el) return;
+        const go = () => applyScenePreset(scene);
+        el.addEventListener('click', go);
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+        });
+      }
+      bindSceneCard(document.getElementById('sceneCardCareless'), 'careless');
+      bindSceneCard(document.getElementById('sceneCardCurrent'), 'current');
+      bindSceneCard(document.getElementById('sceneCardOptimal'), 'optimal');
+
+      applyScenePreset('optimal');
+    };
+
+    const quizQuestions = [
+      {
+        question: "搬完雪櫃，點解要靜置兩小時先插電？",
+        options: [
+          "擦乾外殼先安全",
+          "等冷凍油同雪種回流，保護壓縮機",
+          "等膠邊冷卻定型",
+          "等電壓平穩"
+        ],
+        answer: 1,
+        explanation: "啱！搬運時冷凍油會倒流，即刻開機會磨損壓縮機，要靜置至少兩小時。"
+      },
+      {
+        question: "點解雪櫃頂唔好擺微波爐、雜物？",
+        options: [
+          "會干擾 Wi-Fi",
+          "頂部要散熱，塞住會更食電",
+          "頂部承唔住重量",
+          "容易引蟻"
+        ],
+        answer: 1,
+        explanation: "啱！頂同兩側係散熱位，堆嘢等於着住褸，壓縮機要狂轉。"
+      },
+      {
+        question: "雪櫃擺邊度最慳電？",
+        options: [
+          "貼近煮食爐",
+          "窗邊全日曬",
+          "陰涼通風、遠離熱源同陽光",
+          "密閉櫥櫃入面"
+        ],
+        answer: 2,
+        explanation: "啱！遠離爐同陽光，陰涼通風散熱最好、最慳電。"
+      },
+      {
+        question: "容量同開門習慣，邊組啱？",
+        options: [
+          "塞爆 100%，門開住諗食乜",
+          "七成飽留對流，有需要先開、快開快閂",
+          "完全空置，每五分鐘開一次透氣",
+          "滾燙熱湯直接放入"
+        ],
+        answer: 1,
+        explanation: "啱！七成飽對流順，快開快閂唔漏冷氣，最慳電。"
+      }
+    ];
+
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+
+    function renderQuizQuestion() {
+      const q = quizQuestions[currentQuizIndex];
+      document.getElementById('quizStep').innerText = `第 ${currentQuizIndex + 1} / ${quizQuestions.length} 題`;
+      document.getElementById('quizQuestionText').innerText = q.question;
+
+      const optsContainer = document.getElementById('quizOptions');
+      optsContainer.innerHTML = '';
+
+      const feedback = document.getElementById('quizFeedback');
+      feedback.className = 'hidden p-3 rounded-xl text-xs font-medium';
+      document.getElementById('quizNextBtn').classList.add('hidden');
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left p-3 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-cyan-500 hover:bg-slate-700/60 text-xs text-slate-200 transition-all flex items-center gap-2";
+        btn.innerHTML = `<span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center font-mono font-bold text-[11px] text-slate-300">${String.fromCharCode(65 + idx)}</span> <span>${opt}</span>`;
+        btn.onclick = () => selectQuizAnswer(idx, btn);
+        optsContainer.appendChild(btn);
+      });
+    }
+
+    function selectQuizAnswer(selectedIdx, btnElement) {
+      const q = quizQuestions[currentQuizIndex];
+      const feedback = document.getElementById('quizFeedback');
+      const nextBtn = document.getElementById('quizNextBtn');
+      const allButtons = document.getElementById('quizOptions').children;
+
+      for (let b of allButtons) b.disabled = true;
+
+      if (selectedIdx === q.answer) {
+        quizScore++;
+        btnElement.classList.add('bg-cyan-950/60', 'border-cyan-500', 'text-cyan-200');
+        feedback.className = 'p-3 rounded-xl text-xs font-medium bg-cyan-950/60 border border-cyan-500/40 text-cyan-300';
+        feedback.innerHTML = `🎉 <strong>啱！</strong> ${q.explanation}`;
+      } else {
+        btnElement.classList.add('bg-rose-950/60', 'border-rose-500', 'text-rose-200');
+        feedback.className = 'p-3 rounded-xl text-xs font-medium bg-rose-950/60 border border-rose-500/40 text-rose-300';
+        feedback.innerHTML = `❌ <strong>再試！</strong> ${q.explanation}`;
+      }
+
+      feedback.classList.remove('hidden');
+      nextBtn.classList.remove('hidden');
+    }
+
+  </script>
+</body>
+</html>

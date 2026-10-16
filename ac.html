@@ -155,6 +155,10 @@
         <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
         <span>燈泡</span>
       </a>
+      <a href="fridge.html" class="hidden sm:inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all">
+        <i data-lucide="snowflake" class="w-3.5 h-3.5 text-teal-300"></i>
+        <span>雪櫃</span>
+      </a>
       <button id="airflowToggleBtn" title="氣流" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95">
         <i data-lucide="git-commit" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
         <span id="airflowToggleText" class="hidden sm:inline">氣流</span>
@@ -185,6 +189,7 @@
           天文台 <strong class="text-rose-300">36.9°C</strong> · <strong class="text-amber-300">HK$1.41/度</strong>
         </span>
         <a href="index.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">← 燈泡</a>
+        <a href="fridge.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-teal-300 border border-slate-700">雪櫃 →</a>
       </div>
 
       <div class="grid grid-cols-3 gap-1 sm:gap-2 w-full lg:w-auto lg:min-w-[560px]">
@@ -425,10 +430,16 @@
         </div>
       </div>
 
-      <a href="index.html" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all">
-        <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
-        上一回：燈泡比較
-      </a>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <a href="index.html" class="flex-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-200 transition-all">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
+          上一回：燈泡
+        </a>
+        <a href="fridge.html" class="flex-1 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold bg-teal-950/40 hover:bg-teal-900/50 border border-teal-500/30 text-teal-200 transition-all">
+          <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+          下一回：雪櫃
+        </a>
+      </div>
 
     </div>
   </main>

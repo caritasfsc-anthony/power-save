@@ -1,305 +1,1233 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-HK">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="明愛慳電教育 — 窗口牆房間、日出日落時間播放、冷氣循環扇雪櫃慳電體驗" />
-    <meta name="theme-color" content="#050508" />
-    <title>慳電英雄｜窗口時光 — 明愛教育</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="/css/style.css" />
-  </head>
-  <body>
-    <div id="app">
-      <canvas id="scene" aria-label="3D 房間場景"></canvas>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>明愛慳電 · 燈泡比較</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', system-ui, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .glass-soft {
+      background: rgba(30, 41, 59, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 9999px;
+      background: #334155;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #34d399;
+      cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25);
+    }
+    .card-active-led {
+      border-color: rgb(16 185 129) !important;
+      box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35), 0 8px 24px rgba(16, 185, 129, 0.12);
+      opacity: 1 !important;
+    }
+    .card-active-cfl {
+      border-color: rgb(234 179 8) !important;
+      box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.35), 0 8px 24px rgba(234, 179, 8, 0.1);
+      opacity: 1 !important;
+    }
+    .card-active-inc {
+      border-color: rgb(249 115 22) !important;
+      box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.35), 0 8px 24px rgba(249, 115, 22, 0.1);
+      opacity: 1 !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-      <!-- Boot / dark-room prompt -->
-      <div id="prompt-overlay" class="prompt-overlay" role="status">
-        <div class="prompt-card">
-          <p class="prompt-kicker">Caritas 明愛 · 慳電教育</p>
-          <h1>選擇燈種，照亮呢間房</h1>
-          <p class="prompt-sub">窗口有日出日落——揀燈種，再開冷氣／循環扇／雪櫃，用時間播放睇成個月用電。</p>
-        </div>
+  <!-- Header -->
+  <header class="w-full glass z-30 sticky top-0 border-b border-slate-800/80 px-3 sm:px-5 py-2.5 flex justify-between items-center gap-2">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <img src="mascot.png" alt="明愛吉祥物" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-emerald-500/20 ring-1 ring-emerald-400/30 flex-shrink-0"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 items-center justify-center shadow-lg shadow-emerald-500/20 flex-shrink-0 hidden">
+        <i data-lucide="zap" class="w-5 h-5 text-slate-950 stroke-[2.5]"></i>
       </div>
-
-      <!-- Top bar -->
-      <header class="topbar">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">
-            <img id="brand-mascot" class="brand-mascot" alt="" hidden />
-            <span class="brand-mark-fallback">⚡</span>
-          </span>
-          <div>
-            <strong>慳電英雄</strong>
-            <span>窗口時光 · 冷氣循環 · 雪櫃收納</span>
-          </div>
-        </div>
-        <button type="button" id="btn-all-off" class="btn btn-ghost" title="關掉所有燈">
-          全部關掉
-        </button>
-      </header>
-
-      <!-- Time play bar -->
-      <div class="time-bar" id="time-bar" role="region" aria-label="時間播放">
-        <div class="time-bar-main">
-          <div class="time-clock">
-            <span class="time-day" id="t-day">第 1 日</span>
-            <strong id="t-clock">07:00</strong>
-            <span class="time-phase" id="t-phase">日間</span>
-          </div>
-          <label class="time-slider-wrap">
-            <span class="sr-only">時刻</span>
-            <input type="range" id="s-time" min="0" max="24" step="0.05" value="7" aria-valuetext="07:00" />
-          </label>
-          <div class="time-controls">
-            <button type="button" class="time-btn" id="btn-play" title="播放／暫停" aria-pressed="false">▶</button>
-            <div class="speed-group" role="group" aria-label="加速">
-              <button type="button" class="speed-chip active" data-speed="1">1x</button>
-              <button type="button" class="speed-chip" data-speed="10">10x</button>
-              <button type="button" class="speed-chip" data-speed="60">60x</button>
-            </div>
-            <button type="button" class="time-btn time-btn-text" id="btn-next-day" title="前進一日">＋一日</button>
-            <button type="button" class="time-btn time-btn-text" id="btn-reset-month" title="重置本月累積">重置本月</button>
-          </div>
-        </div>
-        <div class="time-progress">
-          <span>本月進度</span>
-          <div class="time-progress-track" aria-hidden="true">
-            <div class="time-progress-fill" id="t-month-fill" style="width:3.3%"></div>
-          </div>
-          <span id="t-month-label">1／30</span>
-        </div>
+      <div class="min-w-0">
+        <h1 class="text-sm sm:text-base font-black tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent truncate">
+          明愛慳電 · 燈泡比較
+        </h1>
+        <p class="text-[11px] text-slate-400 hidden sm:block">睇溫度、計電費</p>
       </div>
-
-      <!-- Metrics HUD -->
-      <aside class="metrics-panel" aria-live="polite">
-        <div class="metric">
-          <span class="metric-label">即時總瓦數</span>
-          <span class="metric-value" id="m-watts">0 <small>W</small></span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">今日度數</span>
-          <span class="metric-value" id="m-today">0 <small>kWh</small></span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">本月累積度數</span>
-          <span class="metric-value" id="m-kwh">0 <small>kWh</small></span>
-        </div>
-        <div class="metric">
-          <span class="metric-label">本月電費</span>
-          <span class="metric-value" id="m-cost">$0</span>
-        </div>
-        <div class="metric metric-save">
-          <span class="metric-label">相對鎢絲慳電</span>
-          <span class="metric-value" id="m-save">—</span>
-        </div>
-        <div class="metric metric-spark" id="spark-wrap">
-          <span class="metric-label">本月每日用電</span>
-          <canvas id="spark-canvas" width="140" height="36" aria-hidden="true"></canvas>
-        </div>
-      </aside>
-
-      <!-- Control dock -->
-      <aside class="dock" id="dock">
-        <button type="button" class="dock-toggle" id="dock-toggle" aria-expanded="true" aria-controls="dock-body">
-          <span>控制台</span>
-          <span class="chev" aria-hidden="true">▾</span>
-        </button>
-
-        <div class="dock-body" id="dock-body">
-          <section class="dock-section">
-            <h2>燈種選擇</h2>
-            <div class="bulb-cards" role="radiogroup" aria-label="燈種">
-              <button type="button" class="bulb-card" data-type="led" role="radio" aria-checked="false">
-                <span class="bulb-icon led" aria-hidden="true"></span>
-                <span class="bulb-name">LED</span>
-                <span class="bulb-meta">慳電 · 冷白</span>
-              </button>
-              <button type="button" class="bulb-card" data-type="cfl" role="radio" aria-checked="false">
-                <span class="bulb-icon cfl" aria-hidden="true"></span>
-                <span class="bulb-name">慳電燈</span>
-                <span class="bulb-meta">中等 · 偏冷</span>
-              </button>
-              <button type="button" class="bulb-card" data-type="incandescent" role="radio" aria-checked="false">
-                <span class="bulb-icon inc" aria-hidden="true"></span>
-                <span class="bulb-name">鎢絲燈</span>
-                <span class="bulb-meta">耗電 · 暖黃</span>
-              </button>
-            </div>
-          </section>
-
-          <section class="dock-section">
-            <h2>家電開關</h2>
-            <div class="appliance-toggles">
-              <label class="appliance-toggle">
-                <input type="checkbox" id="toggle-ac" />
-                <span class="appliance-info">
-                  <span class="appliance-name">窗口式冷氣</span>
-                  <span class="appliance-meta" id="ac-watts-label">約 900 W</span>
-                </span>
-                <span class="switch" aria-hidden="true"></span>
-              </label>
-              <label class="appliance-toggle">
-                <input type="checkbox" id="toggle-fan" />
-                <span class="appliance-info">
-                  <span class="appliance-name">循環扇</span>
-                  <span class="appliance-meta" id="fan-watts-label">約 45 W</span>
-                </span>
-                <span class="switch" aria-hidden="true"></span>
-              </label>
-              <label class="appliance-toggle">
-                <input type="checkbox" id="toggle-fridge" checked />
-                <span class="appliance-info">
-                  <span class="appliance-name">雪櫃</span>
-                  <span class="appliance-meta" id="fridge-watts-label">約計 120 W</span>
-                </span>
-                <span class="switch" aria-hidden="true"></span>
-              </label>
-            </div>
-            <p class="hint">時間播放時：開着嘅電器會即時累積度數；雪櫃全日都計</p>
-          </section>
-
-          <section class="dock-section practice-panel" id="fan-practice-panel" hidden>
-            <h2>循環扇擺位 <span class="badge-soft" id="fan-save-badge" hidden>約慳 17%</span></h2>
-            <p class="practice-intro">循環扇係冷氣嘅神隊友——擺對位，冷空氣循環更快。</p>
-            <div class="placement-cards" role="radiogroup" aria-label="循環扇擺位">
-              <label class="placement-card">
-                <input type="radio" name="fan-placement" value="correct" checked />
-                <span class="placement-body">
-                  <strong>正確</strong>
-                  <span>出風口下方 · 仰角吹向室內中央</span>
-                </span>
-              </label>
-              <label class="placement-card">
-                <input type="radio" name="fan-placement" value="wrong" />
-                <span class="placement-body">
-                  <strong>錯誤</strong>
-                  <span>亂擺／對住牆——冇慳電效果</span>
-                </span>
-              </label>
-            </div>
-            <p class="hint" id="fan-tip">擺喺冷氣出風口下方，仰角吹向室內中央。</p>
-          </section>
-
-          <section class="dock-section practice-panel" id="fridge-practice-panel">
-            <h2>第三回：雪櫃收納</h2>
-            <p class="practice-intro">雪櫃係全日最勤力嘅家電——唔好塞爆佢！</p>
-
-            <label class="select-row">
-              <span>雪櫃容量</span>
-              <select id="fridge-fill" aria-label="雪櫃裝滿程度">
-                <option value="empty">太空</option>
-                <option value="seventy" selected>七分滿（最好）</option>
-                <option value="stuffed">塞爆</option>
-              </select>
-            </label>
-            <p class="warn-line" id="fridge-warn" hidden></p>
-
-            <div class="practice-checks">
-              <label class="practice-check">
-                <input type="checkbox" id="practice-cool" checked />
-                <span class="check-ui" aria-hidden="true"></span>
-                <span class="check-text">
-                  <strong>熱嘢放涼先入雪櫃</strong>
-                  <em>熱湯即入會令壓縮機更食電</em>
-                </span>
-              </label>
-              <label class="practice-check">
-                <input type="checkbox" id="practice-seal" checked />
-                <span class="check-ui" aria-hidden="true"></span>
-                <span class="check-text">
-                  <strong>檢查門邊膠邊密封</strong>
-                  <em>膠邊老化漏冷氣＝浪費電</em>
-                </span>
-              </label>
-              <label class="practice-check">
-                <input type="checkbox" id="practice-heat" checked />
-                <span class="check-ui" aria-hidden="true"></span>
-                <span class="check-text">
-                  <strong>遠離熱源</strong>
-                  <em>唔放陽光直射／爐邊</em>
-                </span>
-              </label>
-              <label class="practice-check">
-                <input type="checkbox" id="practice-door" checked />
-                <span class="check-ui" aria-hidden="true"></span>
-                <span class="check-text">
-                  <strong>減少開關門次數／時間</strong>
-                  <em>想清楚先開，快取快關</em>
-                </span>
-              </label>
-            </div>
-            <p class="practice-status" id="fridge-status">已做好 5/5 項習慣</p>
-
-            <button type="button" class="notes-toggle" id="notes-toggle" aria-expanded="false" aria-controls="notes-body">
-              注意事項 ▾
-            </button>
-            <div class="notes-body" id="notes-body">
-              <ul class="notes-list">
-                <li>新機／搬動後請<strong>靜置兩小時</strong>再開</li>
-                <li><strong>上方不可置物</strong>，方便散熱</li>
-                <li>放<strong>陰涼通風</strong>處</li>
-                <li>冷藏格約<strong>七分滿</strong>最理想</li>
-                <li><strong>有需要再開</strong>，減少漏冷</li>
-              </ul>
-            </div>
-          </section>
-
-          <section class="dock-section">
-            <label class="toggle-row">
-              <input type="checkbox" id="equal-brightness" checked />
-              <span>同等亮度（約 800 流明）</span>
-            </label>
-            <p class="hint" id="equal-hint">LED ≈ 9W · 慳電燈 ≈ 14W · 鎢絲 ≈ 60W</p>
-          </section>
-
-          <section class="dock-section sliders">
-            <label class="slider-row">
-              <span>燈泡數量 <strong id="v-count">1</strong></span>
-              <input type="range" id="s-count" min="1" max="8" step="1" value="1" />
-            </label>
-            <label class="slider-row">
-              <span>預估每日使用 <strong id="v-hours">4</strong> 小時</span>
-              <input type="range" id="s-hours" min="0.5" max="16" step="0.5" value="4" />
-            </label>
-            <p class="hint">預估只供參考；實際累積以時間播放為準</p>
-            <label class="slider-row">
-              <span>電費 <strong id="v-rate">1.41</strong> HK$/度</span>
-              <input type="range" id="s-rate" min="1.0" max="2.5" step="0.01" value="1.41" />
-            </label>
-            <div class="rate-presets" role="group" aria-label="香港電費預設">
-              <button type="button" class="rate-chip" id="rate-clp" data-rate="1.41">中電約 $1.41</button>
-              <button type="button" class="rate-chip" id="rate-hke" data-rate="1.63">港燈約 $1.63</button>
-            </div>
-            <p class="hint rate-hint">約計（2026 平均淨電價）；實際賬單按級別同燃調變動</p>
-          </section>
-
-          <section class="dock-section tips">
-            <p id="edu-tip">拖動時刻或按播放，睇窗口日出日落；開着嘅電器會累積本月度數。</p>
-          </section>
-        </div>
-      </aside>
-
-      <!-- Mascot / badge -->
-      <div class="mascot-wrap" id="mascot-wrap">
-        <img id="mascot-img" alt="慳電英雄吉祥物" hidden />
-        <div id="mascot-badge" class="mascot-badge" aria-hidden="false">
-          <svg viewBox="0 0 64 64" width="48" height="48" aria-hidden="true">
-            <circle cx="32" cy="32" r="30" fill="#1a3a2a" stroke="#3dd68c" stroke-width="2" />
-            <path d="M28 18 L36 18 L34 30 L42 30 L26 48 L30 34 L22 34 Z" fill="#ffe566" />
-          </svg>
-          <span>慳電英雄</span>
-        </div>
-      </div>
-
-      <footer class="credit">明愛 Caritas · 慳電教育互動體驗</footer>
     </div>
 
-    <script type="module" src="/js/main.js"></script>
-  </body>
+    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+      <button id="thermalToggleBtn" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all active:scale-95">
+        <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-400"></i>
+        <span class="hidden xs:inline sm:inline">熱成像</span>
+      </button>
+      <button id="lightSwitchBtn" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md shadow-emerald-600/25 active:scale-95">
+        <i data-lucide="power" class="w-3.5 h-3.5"></i>
+        <span id="lightSwitchText">電源：開</span>
+      </button>
+      <button id="quizModalOpenBtn" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-600 text-white transition-all active:scale-95">
+        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+        <span class="hidden md:inline">小測驗</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Top comparison cards -->
+  <section class="w-full bg-slate-900/70 border-b border-slate-800/80 px-3 sm:px-5 py-3">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/25 flex items-center gap-1">
+          <i data-lucide="calculator" class="w-3 h-3"></i> 半年電費
+        </span>
+        <span class="text-[11px] text-slate-400">
+          約 <strong class="text-amber-300">HK$1.41 / 度</strong>
+        </span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 w-full lg:w-auto lg:min-w-[560px]">
+        <div id="topCardLED" class="glass-soft rounded-2xl p-2.5 text-center transition-all border-2 border-emerald-500/80 card-active-led">
+          <div class="flex items-center justify-center gap-1 text-[11px] font-bold text-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> LED 9W
+          </div>
+          <div class="mt-1.5 flex justify-around items-baseline gap-1 text-xs">
+            <div>
+              <div class="text-[9px] text-slate-500">度數</div>
+              <div id="topLedKwh" class="font-mono font-bold text-white text-xs sm:text-sm">131 kWh</div>
+            </div>
+            <div class="border-l border-emerald-800/50 pl-2">
+              <div class="text-[9px] text-slate-500">電費</div>
+              <div id="topLedCost" class="font-mono font-black text-emerald-400 text-xs sm:text-sm">HK$ 185</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="topCardCFL" class="glass-soft rounded-2xl p-2.5 text-center transition-all border border-slate-700/80 opacity-75">
+          <div class="flex items-center justify-center gap-1 text-[11px] font-semibold text-yellow-300">
+            <span class="w-2 h-2 rounded-full bg-yellow-400"></span> CFL 14W
+          </div>
+          <div class="mt-1.5 flex justify-around items-baseline gap-1 text-xs">
+            <div>
+              <div class="text-[9px] text-slate-500">度數</div>
+              <div id="topCflKwh" class="font-mono font-bold text-white text-xs sm:text-sm">205 kWh</div>
+            </div>
+            <div class="border-l border-slate-700 pl-2">
+              <div class="text-[9px] text-slate-500">電費</div>
+              <div id="topCflCost" class="font-mono font-bold text-yellow-300 text-xs sm:text-sm">HK$ 288</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="topCardInc" class="glass-soft rounded-2xl p-2.5 text-center transition-all border border-slate-700/80 opacity-75">
+          <div class="flex items-center justify-center gap-1 text-[11px] font-semibold text-orange-400">
+            <span class="w-2 h-2 rounded-full bg-orange-500"></span> 鎢絲 60W
+          </div>
+          <div class="mt-1.5 flex justify-around items-baseline gap-1 text-xs">
+            <div>
+              <div class="text-[9px] text-slate-500">度數</div>
+              <div id="topIncKwh" class="font-mono font-bold text-white text-xs sm:text-sm">876 kWh</div>
+            </div>
+            <div class="border-l border-slate-700 pl-2">
+              <div class="text-[9px] text-slate-500">電費</div>
+              <div id="topIncCost" class="font-mono font-black text-rose-400 text-xs sm:text-sm">HK$ 1,232</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 relative w-full min-h-0 lg:h-[calc(100vh-132px)]">
+
+    <!-- 3D Viewport -->
+    <div class="lg:col-span-7 xl:col-span-8 relative flex flex-col h-[48vh] sm:h-[52vh] lg:h-full bg-slate-950 overflow-hidden">
+      <div id="canvasContainer" class="w-full h-full relative cursor-grab active:cursor-grabbing">
+
+        <div class="absolute top-3 left-3 z-10 pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full glass-soft text-slate-300 text-[11px] shadow-lg">
+          <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>拖曳旋轉 · 滾輪放大</span>
+        </div>
+
+        <div id="thermalBadge" class="hidden absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-red-600/95 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-red-500/40">
+          <i data-lucide="thermometer-sun" class="w-3.5 h-3.5"></i>
+          <span>熱成像（紅＝熱 · 藍＝涼）</span>
+        </div>
+
+        <div id="thermoFloatingBadge" class="absolute bottom-[4.5rem] sm:bottom-20 left-3 z-10 glass px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2.5">
+          <i data-lucide="thermometer" id="thermoBadgeIcon" class="w-5 h-5 text-emerald-400"></i>
+          <div>
+            <div class="text-[10px] text-slate-500">溫度</div>
+            <div id="thermoBadgeValue" class="text-base font-black text-emerald-400 font-mono leading-tight">45 °C</div>
+          </div>
+          <div id="thermoBadgeStatus" class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            微溫
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulb switcher -->
+      <div class="absolute bottom-3 inset-x-3 sm:left-auto sm:right-3 z-20 flex gap-1.5 sm:gap-2 justify-center glass p-1.5 rounded-2xl shadow-2xl">
+        <button onclick="switchBulb('led')" id="btn-led" class="bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-emerald-600/25 border-2 border-emerald-500 text-white font-medium shadow-md">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm flex-shrink-0"></span>
+          <div class="text-left">
+            <div class="text-[10px] text-emerald-200/80">最慳電</div>
+            <div class="text-xs font-bold">LED 9W</div>
+          </div>
+        </button>
+        <button onclick="switchBulb('cfl')" id="btn-cfl" class="bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-white font-medium hover:bg-slate-800">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 flex-shrink-0"></span>
+          <div class="text-left">
+            <div class="text-[10px] text-slate-500">幾慳電</div>
+            <div class="text-xs font-bold">CFL 14W</div>
+          </div>
+        </button>
+        <button onclick="switchBulb('incandescent')" id="btn-incandescent" class="bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-white font-medium hover:bg-slate-800">
+          <span class="w-2.5 h-2.5 rounded-full bg-orange-500 flex-shrink-0"></span>
+          <div class="text-left">
+            <div class="text-[10px] text-slate-500">好費電</div>
+            <div class="text-xs font-bold">鎢絲 60W</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-5 xl:col-span-4 glass border-t lg:border-t-0 lg:border-l border-slate-800/80 flex flex-col h-auto lg:h-full overflow-y-auto custom-scrollbar p-4 sm:p-5 space-y-4">
+
+      <!-- Overview -->
+      <div id="bulbOverviewCard" class="bg-gradient-to-br from-slate-900/90 to-slate-900/50 rounded-2xl p-4 border border-slate-700/60 shadow-xl">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <span id="bulbTag" class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              最慳電
+            </span>
+            <h2 id="bulbTitle" class="text-lg sm:text-xl font-black mt-2 text-white">LED 燈泡</h2>
+            <p id="bulbSubtitle" class="text-xs text-slate-400 mt-1 leading-relaxed">
+              電直接變光，少發熱，最慳電。
+            </p>
+          </div>
+          <div id="bulbRatingBadge" class="text-right flex-shrink-0">
+            <span class="text-2xl font-black text-emerald-400">A+++</span>
+            <div class="text-[9px] text-slate-500">能效</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-3.5 pt-3.5 border-t border-slate-700/40">
+          <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-1 text-[11px] text-slate-400">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-400"></i>
+              <span>功率</span>
+            </div>
+            <div id="metricPower" class="text-lg font-bold text-white mt-0.5">9 W</div>
+            <div class="text-[9px] text-slate-500">約 800 流明</div>
+          </div>
+          <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-1 text-[11px] text-slate-400">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>壽命</span>
+            </div>
+            <div id="metricLifespan" class="text-lg font-bold text-white mt-0.5">25,000 小時</div>
+            <div class="text-[9px] text-slate-500">約 15–20 年</div>
+          </div>
+          <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-1 text-[11px] text-slate-400">
+              <i data-lucide="thermometer" class="w-3.5 h-3.5 text-orange-400"></i>
+              <span>表面溫度</span>
+            </div>
+            <div id="metricTemp" class="text-lg font-bold text-white mt-0.5">~ 45 °C</div>
+            <div id="metricTempSub" class="text-[9px] text-emerald-400">微溫，唔燙手</div>
+          </div>
+          <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-1 text-[11px] text-slate-400">
+              <i data-lucide="leaf" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>變成光</span>
+            </div>
+            <div id="metricEfficiency" class="text-lg font-bold text-emerald-400 mt-0.5">85% - 90%</div>
+            <div class="text-[9px] text-slate-500">約 10% 變熱</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Light vs Heat -->
+      <div class="bg-slate-900/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5">
+        <h3 class="text-xs font-bold flex items-center gap-1.5 text-slate-200">
+          <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>電去邊度？光 vs 熱</span>
+        </h3>
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-cyan-300 font-medium flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span> 光（有用）
+            </span>
+            <span id="pctLight" class="font-mono font-bold text-cyan-400">88%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
+            <div id="barLight" class="bg-cyan-500 h-full transition-all duration-500" style="width: 88%;"></div>
+            <div id="barHeat" class="bg-rose-500 h-full transition-all duration-500" style="width: 12%;"></div>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-rose-400 font-medium flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> 熱（浪費）
+            </span>
+            <span id="pctHeat" class="font-mono font-bold text-rose-400">12%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="bg-slate-900/60 rounded-2xl p-4 border border-slate-800/80 space-y-3.5">
+        <h3 class="text-xs font-bold flex items-center justify-between text-slate-200">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>調一調，睇電費</span>
+          </span>
+          <span class="text-[10px] text-amber-400/90 font-semibold">半年計</span>
+        </h3>
+
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">每日開燈</span>
+            <span id="hoursLabel" class="text-white font-mono font-bold">8 小時</span>
+          </div>
+          <input type="range" id="hoursSlider" min="1" max="24" value="8" step="1" class="w-full accent-emerald-500">
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">燈泡數量</span>
+            <span id="countLabel" class="text-white font-mono font-bold">10 顆</span>
+          </div>
+          <input type="range" id="countSlider" min="1" max="50" value="10" step="1" class="w-full accent-emerald-500">
+        </div>
+
+        <div class="bg-gradient-to-r from-emerald-950/70 to-teal-950/40 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
+              <i data-lucide="piggy-bank" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] text-emerald-300/90 font-medium">半年省電費（換 LED）</div>
+              <div id="savingDisplay" class="text-base font-black text-emerald-400">HKD $1,047</div>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="text-[9px] text-slate-500">約等於</div>
+            <div id="treeDisplay" class="text-xs font-bold text-cyan-300">13 棵樹</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Principles -->
+      <div class="bg-slate-900/60 rounded-2xl p-4 border border-slate-800/80 space-y-2.5">
+        <h3 class="text-xs font-bold flex items-center gap-1.5 text-slate-200">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-purple-400"></i>
+          <span>點解咁亮？環保提示</span>
+        </h3>
+        <div id="principleContent" class="text-xs text-slate-300 space-y-2 leading-relaxed"></div>
+        <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed" id="ecoTip"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Quiz Modal -->
+  <div id="quizModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 max-w-lg w-full rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="award" class="w-5 h-5 text-yellow-400"></i>
+          <h3 class="font-bold text-sm sm:text-base text-white">慳電小測驗</h3>
+        </div>
+        <button id="quizModalCloseBtn" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="quizQuestionContainer" class="space-y-4">
+        <div class="text-xs text-indigo-400 font-semibold" id="quizStep">第 1 / 3 題</div>
+        <p class="text-sm font-medium text-slate-200" id="quizQuestionText"></p>
+        <div id="quizOptions" class="space-y-2"></div>
+        <div id="quizFeedback" class="hidden p-3 rounded-xl text-xs font-medium"></div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button id="quizNextBtn" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition">
+          下一題
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      currentBulb: 'led',
+      isLightOn: true,
+      isThermalMode: false,
+      hoursPerDay: 8,
+      bulbCount: 10,
+      costPerKwh: 1.406,
+      currentThermoTemp: 45,
+      targetThermoTemp: 45
+    };
+
+    const BULB_DATA = {
+      led: {
+        id: 'led',
+        title: 'LED 燈泡',
+        tag: '最慳電',
+        rating: 'A+++',
+        subtitle: '電直接變光，少發熱，最慳電。',
+        watts: 9,
+        lifespan: '25,000 小時',
+        temp: '~ 45 °C',
+        tempSub: '微溫，唔燙手',
+        efficiency: '85% - 90%',
+        lightPct: 88,
+        heatPct: 12,
+        lightColor: 0xffffff,
+        glowColor: 0x38bdf8,
+        targetTemp: 45,
+        principles: `
+          <p><strong>點解亮：</strong>電子喺半導體入面郁，直接變成光。</p>
+          <p><strong>好處：</strong>一開即亮、耐用、無水銀。</p>
+        `,
+        eco: '無毒、壽命約係鎢絲燈 25 倍，少換燈、少垃圾。'
+      },
+      cfl: {
+        id: 'cfl',
+        title: 'CFL 慳電膽',
+        tag: '幾慳電',
+        rating: 'A',
+        subtitle: '用水銀同螢光粉發光，俗稱慳電膽。',
+        watts: 14,
+        lifespan: '8,000 小時',
+        temp: '~ 75 °C',
+        tempSub: '燈管同底座會幾熱',
+        efficiency: '70% - 75%',
+        lightPct: 70,
+        heatPct: 30,
+        lightColor: 0xfff4d6,
+        glowColor: 0xfacc15,
+        targetTemp: 75,
+        principles: `
+          <p><strong>點解亮：</strong>電激發水銀，再由螢光粉變成可見光。</p>
+          <p><strong>短處：</strong>要暖一暖先夠光；成日開關就短命；有水銀。</p>
+        `,
+        eco: '有水銀！唔好亂打破，報廢要交有害回收。'
+      },
+      incandescent: {
+        id: 'incandescent',
+        title: '鎢絲燈',
+        tag: '好費電',
+        rating: 'E',
+        subtitle: '燒熱鎢絲先發光——其實多數電變咗熱。',
+        watts: 60,
+        lifespan: '1,000 小時',
+        temp: '~ 220 °C',
+        tempSub: '好燙！小心灼傷',
+        efficiency: '8% - 10%',
+        lightPct: 8,
+        heatPct: 92,
+        lightColor: 0xff8822,
+        glowColor: 0xf97316,
+        targetTemp: 220,
+        principles: `
+          <p><strong>點解亮：</strong>電熱鎢絲到約 2500°C，燒到發光。</p>
+          <p><strong>浪費：</strong>超過九成電變熱，夏天仲加重冷氣負擔。</p>
+        `,
+        eco: '好費電、壽命短，要成日換，碳排高。'
+      }
+    };
+
+    let scene, camera, renderer, controls;
+    let bulbGroupLED, bulbGroupCFL, bulbGroupIncandescent;
+    let pointLight, ambientLight, glowMesh;
+    let roomGroup;
+    let thermoFluidMesh, thermoGroup;
+
+    function init3D() {
+      const container = document.getElementById('canvasContainer');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0f1d);
+      scene.fog = new THREE.FogExp2(0x0a0f1d, 0.035);
+
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.set(0, 0.9, 4.4);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxDistance = 7.5;
+      controls.minDistance = 1.8;
+      controls.maxPolarAngle = Math.PI / 1.75;
+
+      ambientLight = new THREE.AmbientLight(0x1e293b, 0.35);
+      scene.add(ambientLight);
+
+      pointLight = new THREE.PointLight(0xffffff, 4.0, 14, 1.2);
+      pointLight.position.set(0, 0.35, 0);
+      pointLight.castShadow = true;
+      pointLight.shadow.bias = -0.001;
+      pointLight.shadow.mapSize.width = 1024;
+      pointLight.shadow.mapSize.height = 1024;
+      scene.add(pointLight);
+
+      createBulbGlowHalo();
+      createRoomEnvironment();
+      create3DThermometer();
+      createPedestal();
+      buildBulbModels();
+      updateActiveBulb3D();
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+    }
+
+    function createBulbGlowHalo() {
+      const glowCanvas = document.createElement('canvas');
+      glowCanvas.width = 128;
+      glowCanvas.height = 128;
+      const ctx = glowCanvas.getContext('2d');
+      const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.6)');
+      grad.addColorStop(0.7, 'rgba(255, 240, 200, 0.15)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+
+      const glowTex = new THREE.CanvasTexture(glowCanvas);
+      const spriteMat = new THREE.SpriteMaterial({
+        map: glowTex,
+        color: 0xffffff,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        opacity: 0.75,
+        depthWrite: false
+      });
+      glowMesh = new THREE.Sprite(spriteMat);
+      glowMesh.scale.set(3.2, 3.2, 1);
+      glowMesh.position.set(0, 0.35, 0);
+      scene.add(glowMesh);
+    }
+
+    function createRoomEnvironment() {
+      roomGroup = new THREE.Group();
+
+      const wallGeo = new THREE.PlaneGeometry(16, 12);
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+      const wall = new THREE.Mesh(wallGeo, wallMat);
+      wall.position.set(0, 2, -2.4);
+      wall.receiveShadow = true;
+      roomGroup.add(wall);
+
+      const deskGeo = new THREE.BoxGeometry(14, 0.4, 6);
+      const deskMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45, metalness: 0.2 });
+      const desk = new THREE.Mesh(deskGeo, deskMat);
+      desk.position.set(0, -1.65, 0);
+      desk.receiveShadow = true;
+      roomGroup.add(desk);
+
+      const bookMat1 = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
+      const bookMat2 = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 });
+      const bookGeo = new THREE.BoxGeometry(0.85, 0.12, 0.65);
+
+      const b1 = new THREE.Mesh(bookGeo, bookMat1);
+      b1.position.set(1.6, -1.4, -0.3);
+      b1.rotation.y = 0.2;
+      b1.castShadow = true;
+      b1.receiveShadow = true;
+      roomGroup.add(b1);
+
+      const b2 = new THREE.Mesh(bookGeo, bookMat2);
+      b2.position.set(1.6, -1.28, -0.3);
+      b2.rotation.y = -0.15;
+      b2.castShadow = true;
+      b2.receiveShadow = true;
+      roomGroup.add(b2);
+
+      scene.add(roomGroup);
+    }
+
+    function createPedestal() {
+      const g = new THREE.Group();
+      const baseGeo = new THREE.CylinderGeometry(0.9, 1.1, 0.25, 48);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+      const base = new THREE.Mesh(baseGeo, baseMat);
+      base.position.y = -1.5;
+      base.receiveShadow = true;
+      g.add(base);
+
+      const socketGeo = new THREE.CylinderGeometry(0.38, 0.45, 0.6, 32);
+      const socketMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+      const socketMesh = new THREE.Mesh(socketGeo, socketMat);
+      socketMesh.position.y = -1.1;
+      g.add(socketMesh);
+
+      scene.add(g);
+    }
+
+    function create3DThermometer() {
+      thermoGroup = new THREE.Group();
+      thermoGroup.position.set(-1.6, -1.4, -0.1);
+
+      const standBaseGeo = new THREE.CylinderGeometry(0.35, 0.42, 0.1, 32);
+      const standMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.2 });
+      const standBase = new THREE.Mesh(standBaseGeo, standMat);
+      standBase.position.y = 0.05;
+      standBase.receiveShadow = true;
+      standBase.castShadow = true;
+      thermoGroup.add(standBase);
+
+      const plateGeo = new THREE.BoxGeometry(0.36, 1.9, 0.05);
+      const plateMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+      const plate = new THREE.Mesh(plateGeo, plateMat);
+      plate.position.set(0, 1.05, -0.04);
+      plate.castShadow = true;
+      thermoGroup.add(plate);
+
+      for (let i = 0; i <= 6; i++) {
+        const markGeo = new THREE.BoxGeometry(0.24, 0.015, 0.01);
+        const markMat = new THREE.MeshBasicMaterial({ color: i >= 5 ? 0xef4444 : 0x0f172a });
+        const mark = new THREE.Mesh(markGeo, markMat);
+        mark.position.set(0, 0.35 + i * 0.22, -0.01);
+        thermoGroup.add(mark);
+      }
+
+      const bulbReservoirGeo = new THREE.SphereGeometry(0.13, 24, 24);
+      const fluidMat = new THREE.MeshStandardMaterial({
+        color: 0xef4444,
+        emissive: 0xdc2626,
+        emissiveIntensity: 0.8,
+        roughness: 0.2
+      });
+      const fluidBulb = new THREE.Mesh(bulbReservoirGeo, fluidMat);
+      fluidBulb.position.set(0, 0.22, 0.03);
+      thermoGroup.add(fluidBulb);
+
+      const glassTubeGeo = new THREE.CylinderGeometry(0.065, 0.065, 1.6, 24);
+      const glassTubeMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.35,
+        transmission: 0.9,
+        roughness: 0.1,
+        ior: 1.5
+      });
+      const glassTube = new THREE.Mesh(glassTubeGeo, glassTubeMat);
+      glassTube.position.set(0, 1.02, 0.03);
+      thermoGroup.add(glassTube);
+
+      const fluidColGeo = new THREE.CylinderGeometry(0.042, 0.042, 1.0, 16);
+      thermoFluidMesh = new THREE.Mesh(fluidColGeo, fluidMat);
+      thermoFluidMesh.position.set(0, 0.3, 0.03);
+      thermoGroup.add(thermoFluidMesh);
+
+      scene.add(thermoGroup);
+    }
+
+    function buildBulbModels() {
+      bulbGroupLED = new THREE.Group();
+      const screwGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.45, 24);
+      const screwMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.2 });
+      const screwLED = new THREE.Mesh(screwGeo, screwMat);
+      screwLED.position.y = -0.7;
+      bulbGroupLED.add(screwLED);
+
+      const heatSinkGeo = new THREE.CylinderGeometry(0.68, 0.36, 0.65, 32);
+      const heatSinkMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.4, metalness: 0.3 });
+      const heatSink = new THREE.Mesh(heatSinkGeo, heatSinkMat);
+      heatSink.position.y = -0.22;
+      bulbGroupLED.add(heatSink);
+      bulbGroupLED.heatSinkMat = heatSinkMat;
+
+      const pcbGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.04, 32);
+      const pcbMat = new THREE.MeshStandardMaterial({ color: 0x059669 });
+      const pcb = new THREE.Mesh(pcbGeo, pcbMat);
+      pcb.position.y = 0.1;
+      bulbGroupLED.add(pcb);
+
+      const chipGeo = new THREE.BoxGeometry(0.08, 0.03, 0.08);
+      const chipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2.2 });
+      bulbGroupLED.chips = [];
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const chip = new THREE.Mesh(chipGeo, chipMat.clone());
+        chip.position.set(Math.cos(a) * 0.35, 0.13, Math.sin(a) * 0.35);
+        bulbGroupLED.add(chip);
+        bulbGroupLED.chips.push(chip);
+      }
+
+      const domeGeo = new THREE.SphereGeometry(0.7, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.65);
+      const domeMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.88,
+        roughness: 0.25,
+        transmission: 0.45,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.8
+      });
+      const dome = new THREE.Mesh(domeGeo, domeMat);
+      dome.position.y = 0.08;
+      bulbGroupLED.add(dome);
+      bulbGroupLED.domeMat = domeMat;
+      scene.add(bulbGroupLED);
+
+      bulbGroupCFL = new THREE.Group();
+      const screwCFL = new THREE.Mesh(screwGeo, screwMat);
+      screwCFL.position.y = -0.7;
+      bulbGroupCFL.add(screwCFL);
+
+      const ballastGeo = new THREE.CylinderGeometry(0.52, 0.38, 0.48, 24);
+      const ballastMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.5 });
+      const ballast = new THREE.Mesh(ballastGeo, ballastMat);
+      ballast.position.y = -0.3;
+      bulbGroupCFL.add(ballast);
+      bulbGroupCFL.ballastMat = ballastMat;
+
+      class SpiralCurve extends THREE.Curve {
+        getPoint(t, opt = new THREE.Vector3()) {
+          const revs = 3.6;
+          const h = 1.1;
+          const r = 0.36;
+          const th = t * Math.PI * 2 * revs;
+          return opt.set(Math.cos(th) * r, t * h, Math.sin(th) * r);
+        }
+      }
+      const spiralPath = new SpiralCurve();
+      const tubeGeo = new THREE.TubeGeometry(spiralPath, 120, 0.09, 16, false);
+      const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfffae0, emissiveIntensity: 1.2, roughness: 0.3 });
+      const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+      tubeMesh.position.y = -0.05;
+      bulbGroupCFL.add(tubeMesh);
+      bulbGroupCFL.tubeMat = tubeMat;
+      scene.add(bulbGroupCFL);
+
+      bulbGroupIncandescent = new THREE.Group();
+      const screwInc = new THREE.Mesh(screwGeo, screwMat);
+      screwInc.position.y = -0.7;
+      bulbGroupIncandescent.add(screwInc);
+
+      const glassPoints = [
+        new THREE.Vector2(0.34, -0.45),
+        new THREE.Vector2(0.36, -0.2),
+        new THREE.Vector2(0.48, 0.1),
+        new THREE.Vector2(0.72, 0.45),
+        new THREE.Vector2(0.70, 0.8),
+        new THREE.Vector2(0.45, 1.1),
+        new THREE.Vector2(0.0, 1.2)
+      ];
+      const glassGeo = new THREE.LatheGeometry(glassPoints, 36);
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xfff4e0,
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.05,
+        transmission: 0.95,
+        reflectivity: 0.8,
+        emissive: 0xff7700,
+        emissiveIntensity: 0.1
+      });
+      const glassShell = new THREE.Mesh(glassGeo, glassMat);
+      bulbGroupIncandescent.add(glassShell);
+      bulbGroupIncandescent.glassMat = glassMat;
+
+      const stemGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.6, 16);
+      const stemMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, roughness: 0.2 });
+      const stem = new THREE.Mesh(stemGeo, stemMat);
+      stem.position.y = -0.05;
+      bulbGroupIncandescent.add(stem);
+
+      const wireMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+      const wire1Geo = new THREE.CylinderGeometry(0.012, 0.012, 0.5, 8);
+      const w1 = new THREE.Mesh(wire1Geo, wireMat);
+      w1.position.set(-0.1, 0.4, 0);
+      w1.rotation.z = -0.15;
+      bulbGroupIncandescent.add(w1);
+
+      const w2 = new THREE.Mesh(wire1Geo, wireMat);
+      w2.position.set(0.1, 0.4, 0);
+      w2.rotation.z = 0.15;
+      bulbGroupIncandescent.add(w2);
+
+      const filGeo = new THREE.TorusGeometry(0.16, 0.016, 8, 24, Math.PI);
+      const filMat = new THREE.MeshStandardMaterial({ color: 0xff4500, emissive: 0xffaa00, emissiveIntensity: 3.8, roughness: 0.1 });
+      const fil = new THREE.Mesh(filGeo, filMat);
+      fil.rotation.z = Math.PI;
+      fil.position.set(0, 0.62, 0);
+      bulbGroupIncandescent.add(fil);
+      bulbGroupIncandescent.filamentMat = filMat;
+
+      scene.add(bulbGroupIncandescent);
+    }
+
+    function updateActiveBulb3D() {
+      bulbGroupLED.visible = (state.currentBulb === 'led');
+      bulbGroupCFL.visible = (state.currentBulb === 'cfl');
+      bulbGroupIncandescent.visible = (state.currentBulb === 'incandescent');
+
+      const data = BULB_DATA[state.currentBulb];
+
+      if (!state.isLightOn) {
+        state.targetThermoTemp = 25;
+      } else {
+        state.targetThermoTemp = data.targetTemp;
+      }
+
+      if (state.isLightOn) {
+        pointLight.intensity = (state.currentBulb === 'incandescent') ? 4.5 : 3.8;
+        pointLight.color.setHex(data.lightColor);
+
+        if (glowMesh) {
+          glowMesh.visible = true;
+          glowMesh.material.color.setHex(data.glowColor);
+          glowMesh.material.opacity = (state.currentBulb === 'incandescent') ? 0.85 : 0.65;
+          glowMesh.scale.set(
+            state.currentBulb === 'incandescent' ? 3.8 : 3.0,
+            state.currentBulb === 'incandescent' ? 3.8 : 3.0,
+            1
+          );
+        }
+
+        ambientLight.intensity = 0.35;
+        ambientLight.color.setHex(data.lightColor);
+
+        if (!state.isThermalMode) {
+          bulbGroupLED.domeMat.emissive.setHex(0xffffff);
+          bulbGroupLED.domeMat.emissiveIntensity = 0.9;
+          bulbGroupLED.chips.forEach(c => c.material.emissiveIntensity = 2.5);
+
+          bulbGroupCFL.tubeMat.emissive.setHex(0xfffae6);
+          bulbGroupCFL.tubeMat.emissiveIntensity = 1.4;
+
+          bulbGroupIncandescent.filamentMat.emissive.setHex(0xffbb33);
+          bulbGroupIncandescent.filamentMat.emissiveIntensity = 4.5;
+          bulbGroupIncandescent.glassMat.emissive.setHex(0xff7700);
+          bulbGroupIncandescent.glassMat.emissiveIntensity = 0.25;
+        }
+      } else {
+        pointLight.intensity = 0.0;
+        ambientLight.intensity = 0.08;
+        ambientLight.color.setHex(0x1e293b);
+
+        if (glowMesh) glowMesh.visible = false;
+
+        bulbGroupLED.domeMat.emissiveIntensity = 0.0;
+        bulbGroupLED.chips.forEach(c => c.material.emissiveIntensity = 0.0);
+        bulbGroupCFL.tubeMat.emissiveIntensity = 0.0;
+        bulbGroupIncandescent.filamentMat.emissiveIntensity = 0.0;
+        bulbGroupIncandescent.glassMat.emissiveIntensity = 0.0;
+      }
+
+      applyThermalVisuals();
+    }
+
+    function applyThermalVisuals() {
+      const isThermal = state.isThermalMode;
+      const thermalBadge = document.getElementById('thermalBadge');
+
+      if (isThermal) {
+        thermalBadge.classList.remove('hidden');
+        if (state.currentBulb === 'led') {
+          bulbGroupLED.heatSinkMat.color.setHex(0x0284c7);
+          bulbGroupLED.domeMat.color.setHex(0x0369a1);
+          bulbGroupLED.domeMat.emissive.setHex(0x06b6d4);
+          bulbGroupLED.domeMat.emissiveIntensity = 0.4;
+        } else if (state.currentBulb === 'cfl') {
+          bulbGroupCFL.tubeMat.color.setHex(0xeab308);
+          bulbGroupCFL.tubeMat.emissive.setHex(0xf97316);
+          bulbGroupCFL.tubeMat.emissiveIntensity = 0.9;
+          bulbGroupCFL.ballastMat.color.setHex(0x0d9488);
+        } else if (state.currentBulb === 'incandescent') {
+          bulbGroupIncandescent.filamentMat.emissive.setHex(0xffffff);
+          bulbGroupIncandescent.filamentMat.emissiveIntensity = 6.0;
+          bulbGroupIncandescent.glassMat.color.setHex(0xef4444);
+          bulbGroupIncandescent.glassMat.emissive.setHex(0xdc2626);
+          bulbGroupIncandescent.glassMat.emissiveIntensity = 0.85;
+        }
+      } else {
+        thermalBadge.classList.add('hidden');
+        bulbGroupLED.heatSinkMat.color.setHex(0xf1f5f9);
+        bulbGroupLED.domeMat.color.setHex(0xffffff);
+        bulbGroupCFL.tubeMat.color.setHex(0xffffff);
+        bulbGroupCFL.ballastMat.color.setHex(0xe2e8f0);
+        bulbGroupIncandescent.glassMat.color.setHex(0xfff4e0);
+        bulbGroupIncandescent.filamentMat.emissive.setHex(0xff9900);
+      }
+    }
+
+    function onWindowResize() {
+      if (!renderer || !camera) return;
+      const c = document.getElementById('canvasContainer');
+      camera.aspect = c.clientWidth / c.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(c.clientWidth, c.clientHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (controls) controls.update();
+
+      state.currentThermoTemp += (state.targetThermoTemp - state.currentThermoTemp) * 0.05;
+
+      if (thermoFluidMesh) {
+        const norm = Math.max(0, Math.min(1, (state.currentThermoTemp - 20) / 210));
+        const targetHeight = 0.05 + norm * 1.4;
+        thermoFluidMesh.scale.y = targetHeight;
+        thermoFluidMesh.position.y = 0.25 + (targetHeight * 0.5);
+      }
+
+      const displayTemp = Math.round(state.currentThermoTemp);
+      const valElem = document.getElementById('thermoBadgeValue');
+      const statElem = document.getElementById('thermoBadgeStatus');
+      const iconElem = document.getElementById('thermoBadgeIcon');
+
+      if (valElem) valElem.innerText = `${displayTemp} °C`;
+      if (statElem && iconElem) {
+        if (displayTemp <= 30) {
+          statElem.innerText = "關燈";
+          statElem.className = "text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-700/60 text-slate-300";
+          iconElem.className = "w-5 h-5 text-slate-400";
+        } else if (displayTemp <= 55) {
+          statElem.innerText = "微溫";
+          statElem.className = "text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+          iconElem.className = "w-5 h-5 text-emerald-400";
+        } else if (displayTemp <= 95) {
+          statElem.innerText = "幾熱";
+          statElem.className = "text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
+          iconElem.className = "w-5 h-5 text-yellow-400";
+        } else {
+          statElem.innerText = "好燙";
+          statElem.className = "text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-rose-500/30 text-rose-300 border border-rose-500/40 animate-pulse";
+          iconElem.className = "w-5 h-5 text-rose-500 animate-bounce";
+        }
+      }
+
+      const t = Date.now() * 0.0015;
+      if (bulbGroupLED) bulbGroupLED.rotation.y = Math.sin(t * 0.5) * 0.2;
+      if (bulbGroupCFL) bulbGroupCFL.rotation.y = t * 0.3;
+      if (bulbGroupIncandescent) bulbGroupIncandescent.rotation.y = Math.sin(t * 0.5) * 0.2;
+
+      renderer.render(scene, camera);
+    }
+
+    const BTN_IDLE = "bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-slate-800/70 border border-slate-700 text-slate-300 hover:text-white font-medium hover:bg-slate-800";
+    const BTN_LED = "bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-emerald-600/25 border-2 border-emerald-500 text-white font-medium shadow-md scale-[1.02]";
+    const BTN_CFL = "bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-yellow-600/20 border-2 border-yellow-500 text-white font-medium shadow-md scale-[1.02]";
+    const BTN_INC = "bulb-select-btn flex-1 sm:flex-initial flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 bg-orange-600/20 border-2 border-orange-500 text-white font-medium shadow-md scale-[1.02]";
+
+    function switchBulb(type) {
+      state.currentBulb = type;
+
+      document.getElementById('btn-led').className = type === 'led' ? BTN_LED : BTN_IDLE;
+      document.getElementById('btn-cfl').className = type === 'cfl' ? BTN_CFL : BTN_IDLE;
+      document.getElementById('btn-incandescent').className = type === 'incandescent' ? BTN_INC : BTN_IDLE;
+
+      updateActiveBulb3D();
+      updateUIDetails();
+      updateCalculator();
+    }
+
+    function updateUIDetails() {
+      const data = BULB_DATA[state.currentBulb];
+
+      document.getElementById('bulbTitle').innerText = data.title;
+      document.getElementById('bulbTag').innerText = data.tag;
+      document.getElementById('bulbSubtitle').innerText = data.subtitle;
+      document.getElementById('bulbRatingBadge').firstElementChild.innerText = data.rating;
+      document.getElementById('metricPower').innerText = `${data.watts} W`;
+      document.getElementById('metricLifespan').innerText = data.lifespan;
+      document.getElementById('metricTemp').innerText = data.temp;
+      document.getElementById('metricTempSub').innerText = data.tempSub;
+      document.getElementById('metricEfficiency').innerText = data.efficiency;
+
+      // Tag color by bulb
+      const tagEl = document.getElementById('bulbTag');
+      if (state.currentBulb === 'led') {
+        tagEl.className = "inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        document.getElementById('bulbRatingBadge').firstElementChild.className = "text-2xl font-black text-emerald-400";
+      } else if (state.currentBulb === 'cfl') {
+        tagEl.className = "inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30";
+        document.getElementById('bulbRatingBadge').firstElementChild.className = "text-2xl font-black text-yellow-400";
+      } else {
+        tagEl.className = "inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30";
+        document.getElementById('bulbRatingBadge').firstElementChild.className = "text-2xl font-black text-orange-400";
+      }
+
+      document.getElementById('pctLight').innerText = `${data.lightPct}%`;
+      document.getElementById('pctHeat').innerText = `${data.heatPct}%`;
+      document.getElementById('barLight').style.width = `${data.lightPct}%`;
+      document.getElementById('barHeat').style.width = `${data.heatPct}%`;
+
+      document.getElementById('principleContent').innerHTML = data.principles;
+      document.getElementById('ecoTip').innerText = data.eco;
+
+      ['topCardLED', 'topCardCFL', 'topCardInc'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('card-active-led', 'card-active-cfl', 'card-active-inc', 'border-2');
+        el.classList.add('opacity-75', 'border', 'border-slate-700/80');
+      });
+
+      if (state.currentBulb === 'led') {
+        const el = document.getElementById('topCardLED');
+        el.classList.remove('opacity-75', 'border-slate-700/80', 'border');
+        el.classList.add('border-2', 'card-active-led');
+      } else if (state.currentBulb === 'cfl') {
+        const el = document.getElementById('topCardCFL');
+        el.classList.remove('opacity-75', 'border-slate-700/80', 'border');
+        el.classList.add('border-2', 'card-active-cfl');
+      } else {
+        const el = document.getElementById('topCardInc');
+        el.classList.remove('opacity-75', 'border-slate-700/80', 'border');
+        el.classList.add('border-2', 'card-active-inc');
+      }
+    }
+
+    function updateCalculator() {
+      const hours = state.hoursPerDay;
+      const count = state.bulbCount;
+      const rate = state.costPerKwh;
+      const days = 182.5;
+
+      const incKwh = Math.round((60 * hours * days * count) / 1000);
+      const cflKwh = Math.round((14 * hours * days * count) / 1000);
+      const ledKwh = Math.round((9 * hours * days * count) / 1000);
+
+      const incCost = Math.round(incKwh * rate);
+      const cflCost = Math.round(cflKwh * rate);
+      const ledCost = Math.round(ledKwh * rate);
+
+      const co2Factor = 0.39;
+      const incCo2 = Math.round(incKwh * co2Factor);
+      const ledCo2 = Math.round(ledKwh * co2Factor);
+
+      document.getElementById('topLedKwh').innerText = `${ledKwh} kWh`;
+      document.getElementById('topLedCost').innerText = `HK$ ${ledCost.toLocaleString()}`;
+      document.getElementById('topCflKwh').innerText = `${cflKwh} kWh`;
+      document.getElementById('topCflCost').innerText = `HK$ ${cflCost.toLocaleString()}`;
+      document.getElementById('topIncKwh').innerText = `${incKwh} kWh`;
+      document.getElementById('topIncCost').innerText = `HK$ ${incCost.toLocaleString()}`;
+
+      const sixMonthSaving = incCost - ledCost;
+      document.getElementById('savingDisplay').innerText = `HKD $${sixMonthSaving.toLocaleString()}`;
+
+      const treesSaved = Math.max(1, Math.round((incCo2 - ledCo2) / 11));
+      document.getElementById('treeDisplay').innerText = `${treesSaved} 棵樹`;
+    }
+
+    const quizQuestions = [
+      {
+        question: "點解鎢絲燈咁費電？",
+        options: [
+          "超過九成電變熱，得約一成變光",
+          "光太刺眼，多用咗紫外線",
+          "鎢絲係玻璃造，透光差",
+          "只可以用乾電池"
+        ],
+        answer: 0,
+        explanation: "啱！鎢絲燒到約 2500°C 先發光，超過九成電變咗熱。"
+      },
+      {
+        question: "CFL 慳電膽報廢時最要注意咩？",
+        options: [
+          "會放一氧化碳",
+          "有水銀，唔好亂打破或亂扔",
+          "有強磁力會吸金屬",
+          "係塑膠，唔可以燒"
+        ],
+        answer: 1,
+        explanation: "啱！CFL 有微量水銀，要交有害回收。"
+      },
+      {
+        question: "同樣約 800 流明亮度，LED 大約用幾多瓦？",
+        options: [
+          "約 60W",
+          "約 150W",
+          "約 8–9W",
+          "0W"
+        ],
+        answer: 2,
+        explanation: "啱！LED 約 9W 就夠亮，可慳超過八成電。"
+      }
+    ];
+
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+
+    function refreshIcons() {
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderQuizQuestion() {
+      const q = quizQuestions[currentQuizIndex];
+      document.getElementById('quizStep').innerText = `第 ${currentQuizIndex + 1} / ${quizQuestions.length} 題`;
+      document.getElementById('quizQuestionText').innerText = q.question;
+
+      const optsContainer = document.getElementById('quizOptions');
+      optsContainer.innerHTML = '';
+
+      const feedback = document.getElementById('quizFeedback');
+      feedback.className = 'hidden p-3 rounded-xl text-xs font-medium';
+      document.getElementById('quizNextBtn').classList.add('hidden');
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left p-3 rounded-xl bg-slate-800/90 border border-slate-700 hover:border-indigo-500 hover:bg-slate-700/60 text-xs text-slate-200 transition-all flex items-center gap-2";
+        btn.innerHTML = `<span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center font-mono font-bold text-[11px] text-slate-300 flex-shrink-0">${String.fromCharCode(65 + idx)}</span> <span>${opt}</span>`;
+        btn.onclick = () => selectQuizAnswer(idx, btn);
+        optsContainer.appendChild(btn);
+      });
+    }
+
+    function selectQuizAnswer(selectedIdx, btnElement) {
+      const q = quizQuestions[currentQuizIndex];
+      const feedback = document.getElementById('quizFeedback');
+      const nextBtn = document.getElementById('quizNextBtn');
+      const allButtons = document.getElementById('quizOptions').children;
+
+      for (let b of allButtons) b.disabled = true;
+
+      if (selectedIdx === q.answer) {
+        quizScore++;
+        btnElement.classList.add('bg-emerald-900/40', 'border-emerald-500', 'text-emerald-200');
+        feedback.className = 'p-3 rounded-xl text-xs font-medium bg-emerald-950/60 border border-emerald-500/40 text-emerald-300';
+        feedback.innerHTML = `🎉 <strong>答啱！</strong> ${q.explanation}`;
+      } else {
+        btnElement.classList.add('bg-rose-900/40', 'border-rose-500', 'text-rose-200');
+        feedback.className = 'p-3 rounded-xl text-xs font-medium bg-rose-950/60 border border-rose-500/40 text-rose-300';
+        feedback.innerHTML = `💪 <strong>再試！</strong> ${q.explanation}`;
+      }
+
+      feedback.classList.remove('hidden');
+      nextBtn.classList.remove('hidden');
+    }
+
+    window.onload = function() {
+      init3D();
+      refreshIcons();
+
+      document.getElementById('hoursSlider').addEventListener('input', (e) => {
+        state.hoursPerDay = parseInt(e.target.value);
+        document.getElementById('hoursLabel').innerText = `${state.hoursPerDay} 小時`;
+        updateCalculator();
+      });
+
+      document.getElementById('countSlider').addEventListener('input', (e) => {
+        state.bulbCount = parseInt(e.target.value);
+        document.getElementById('countLabel').innerText = `${state.bulbCount} 顆`;
+        updateCalculator();
+      });
+
+      const lightSwitchBtn = document.getElementById('lightSwitchBtn');
+      lightSwitchBtn.addEventListener('click', () => {
+        state.isLightOn = !state.isLightOn;
+        const textSpan = document.getElementById('lightSwitchText');
+        if (state.isLightOn) {
+          lightSwitchBtn.className = "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md shadow-emerald-600/25 active:scale-95";
+          textSpan.innerText = "電源：開";
+        } else {
+          lightSwitchBtn.className = "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all border border-slate-700 active:scale-95";
+          textSpan.innerText = "電源：關";
+        }
+        updateActiveBulb3D();
+      });
+
+      const thermalBtn = document.getElementById('thermalToggleBtn');
+      thermalBtn.addEventListener('click', () => {
+        state.isThermalMode = !state.isThermalMode;
+        if (state.isThermalMode) {
+          thermalBtn.className = "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white border border-red-500 transition-all shadow-lg shadow-red-600/40 active:scale-95";
+        } else {
+          thermalBtn.className = "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all active:scale-95";
+        }
+        applyThermalVisuals();
+      });
+
+      const quizModal = document.getElementById('quizModal');
+      document.getElementById('quizModalOpenBtn').addEventListener('click', () => {
+        quizModal.classList.remove('hidden');
+        quizModal.classList.add('flex');
+        currentQuizIndex = 0;
+        quizScore = 0;
+        renderQuizQuestion();
+        refreshIcons();
+      });
+
+      document.getElementById('quizModalCloseBtn').addEventListener('click', () => {
+        quizModal.classList.add('hidden');
+        quizModal.classList.remove('flex');
+      });
+
+      document.getElementById('quizNextBtn').addEventListener('click', () => {
+        currentQuizIndex++;
+        if (currentQuizIndex < quizQuestions.length) {
+          renderQuizQuestion();
+        } else {
+          const container = document.getElementById('quizQuestionContainer');
+          container.innerHTML = `
+            <div class="text-center py-6 space-y-3">
+              <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-3xl font-black">
+                ${quizScore}/${quizQuestions.length}
+              </div>
+              <h4 class="text-base font-bold text-white">完成！</h4>
+              <p class="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                ${quizScore === quizQuestions.length ? '好叻！你已經識分三種燈嘅慳電分別。' : '唔錯！記住：LED 最慳電、最安全。'}
+              </p>
+              <button onclick="currentQuizIndex = 0; quizScore = 0; renderQuizQuestion();" class="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">
+                再玩一次
+              </button>
+            </div>
+          `;
+          document.getElementById('quizNextBtn').classList.add('hidden');
+        }
+      });
+
+      updateUIDetails();
+      updateCalculator();
+    };
+
+    window.switchBulb = switchBulb;
+  </script>
+</body>
 </html>

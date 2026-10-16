@@ -510,7 +510,8 @@
     let pointerNdc = new THREE.Vector2();
     const FRONT_CORRIDOR_Z = -0.55;
     const PLACEMENT_POS = {
-      cool: new THREE.Vector3(-1.55, 0, 0.25),
+      // 陰涼：面向鏡頭廚櫃左邊、近左牆（櫃前走廊，唔穿櫃）
+      cool: new THREE.Vector3(-2.35, 0, -0.72),
       stove: new THREE.Vector3(1.35, 0, -0.65),
       sun: new THREE.Vector3(-2.2, 0, 0.65)
     };
@@ -556,7 +557,7 @@
       scene.add(sunDirLight);
 
       coolRimLight = new THREE.PointLight(0x67e8f9, 0.55, 5);
-      coolRimLight.position.set(-1.8, 1.6, 0.6);
+      coolRimLight.position.set(-2.35, 1.55, -0.45);
       scene.add(coolRimLight);
 
       fridgeTargetPos = PLACEMENT_POS.cool.clone();
@@ -862,8 +863,8 @@
       kitchenRoot.add(clutter);
 
       // Cool-spot floor marker (no plant pot)
-      const rug = box(1.15, 0.02, 0.85, 0x1e3a5f, { roughness: 0.95 });
-      rug.position.set(-1.55, 0.01, 0.25);
+      const rug = box(1.05, 0.02, 0.95, 0x1e3a5f, { roughness: 0.95 });
+      rug.position.set(-2.35, 0.01, -0.72);
       rug.name = 'coolRug';
       kitchenRoot.add(rug);
     }
@@ -974,7 +975,7 @@
         new THREE.PlaneGeometry(0.24, 0.3),
         new THREE.MeshBasicMaterial({ map: labelTex })
       );
-      label.position.set(0.55, -0.38, 0.04);
+      label.position.set(0.58, 0.42, 0.04);  // upper half of fresh door
       doorFresh.add(label);
       fridgeGroup.labelCanvas = labelCanvas;
       fridgeGroup.labelTex = labelTex;
@@ -1231,8 +1232,9 @@
       const dest = target.clone();
       dest.y = 0;
       // Keep fridge on clear floor in front of cabinets (cabinet front ≈ z=-1.84)
+      // Left wall ≈ x=-3.35; fridge half-width ≈ 0.46 → stay ≥ -2.55
       dest.z = Math.max(dest.z, -0.85);
-      dest.x = Math.max(-2.45, Math.min(2.2, dest.x));
+      dest.x = Math.max(-2.55, Math.min(2.2, dest.x));
       if (instant || !fridgeGroup) {
         fridgeWaypoints = [];
         fridgeTargetPos.copy(dest);
@@ -1299,7 +1301,7 @@
         ambientLight.color.setHex(0xc5d4e8);
         coolRimLight.intensity = 0.7;
         coolRimLight.color.setHex(0x67e8f9);
-        coolRimLight.position.set(-1.6, 1.5, 0.4);
+        coolRimLight.position.set(-2.35, 1.5, -0.45);
       } else if (mode === 'stove') {
         setFridgePath(PLACEMENT_POS.stove, instant);
         stoveGlow.intensity = 1.9;

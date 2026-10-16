@@ -801,13 +801,13 @@
       }
       // Countertop oven / 焗爐 sitting on counter beside hob
       const ovenBody = box(0.58, 0.42, 0.5, 0x1f2937, { metalness: 0.4, roughness: 0.4 });
-      ovenBody.position.set(0.82, 0.23, 0.02);
+      ovenBody.position.set(0.78, 0.23, 0.02);
       stoveGroup.add(ovenBody);
       const ovenWin = box(0.38, 0.22, 0.02, 0x0ea5e9, { emissive: 0xf97316, emissiveIntensity: 0.18, transparent: true, opacity: 0.72 });
-      ovenWin.position.set(0.82, 0.24, 0.28);
+      ovenWin.position.set(0.78, 0.24, 0.28);
       stoveGroup.add(ovenWin);
       const ovenHandle = box(0.28, 0.03, 0.03, 0x94a3b8, { metalness: 0.75, roughness: 0.25 });
-      ovenHandle.position.set(0.82, 0.08, 0.28);
+      ovenHandle.position.set(0.78, 0.08, 0.28);
       stoveGroup.add(ovenHandle);
       stoveGlow = new THREE.PointLight(0xff6b2d, 0, 3.5);
       stoveGlow.position.set(0.1, 0.35, 0.1);
@@ -821,7 +821,7 @@
       stoveGroup.add(potLid);
 
       // Sit ON countertop (counter y≈0.955)
-      stoveGroup.position.set(2.65, 0.955, -2.05);
+      stoveGroup.position.set(2.00, 0.955, -2.05);  // hob+oven fully on counter (right≈3.11)
       kitchenRoot.add(stoveGroup);
 
       // Kitchen clutter on counter — lived-in props (away from UI)
@@ -847,10 +847,10 @@
         clutter.add(bottle);
       });
       const spice1 = cyl(0.04, 0.04, 0.1, 0x78350f);
-      spice1.position.set(3.65, 1.03, -2.15);
+      spice1.position.set(3.05, 1.03, -2.15);
       clutter.add(spice1);
       const spice2 = cyl(0.035, 0.035, 0.09, 0x9a3412);
-      spice2.position.set(3.78, 1.02, -2.12);
+      spice2.position.set(3.18, 1.02, -2.12);
       clutter.add(spice2);
       const cloth = box(0.28, 0.015, 0.18, 0x67e8f9, { roughness: 0.95 });
       cloth.position.set(1.8, 0.97, -1.85);
@@ -863,7 +863,7 @@
       kettleHandle.position.set(0.38, 1.08, -1.95);
       clutter.add(kettleHandle);
       const toaster = box(0.28, 0.16, 0.18, 0x475569, { metalness: 0.35, roughness: 0.4 });
-      toaster.position.set(4.0, 1.05, -1.95);
+      toaster.position.set(3.22, 1.05, -1.95);  // on counter, right of oven
       clutter.add(toaster);
       kitchenRoot.add(clutter);
 
@@ -943,27 +943,26 @@
       fridgeInteriorLight.position.set(0, 1.05, 0.08);
       fridgeGroup.add(fridgeInteriorLight);
 
-      // —— Doors + rubber gasket on INNER sealing face (門邊膠邊) ——
-      // Real fridge gasket: soft rubber bead on the body-facing door liner,
-      // NOT a thick picture-frame on the exterior silhouette.
-      function addInnerRubberGasket(doorGroup, w, h, cx, cy) {
-        const bead = 0.028;          // rubber cross-section
-        const inset = 0.055;         // inset from door outer edge → sealing channel
-        const gw = w - inset * 2;
-        const gh = h - inset * 2;
-        // Door panel is 0.07 thick centered at z=0 → back face ≈ -0.035
-        // Sit gasket just proud of the inner liner toward the body
-        const gz = -0.048;
-        const col = 0x1d4ed8;
-        const matOpts = { roughness: 0.88, metalness: 0.02, emissive: 0x1e3a8a, emissiveIntensity: 0.3 };
-        const top = box(gw + bead, bead, bead, col, matOpts);
-        top.position.set(cx, cy + gh / 2, gz);
-        const bot = box(gw + bead, bead, bead, col, matOpts);
-        bot.position.set(cx, cy - gh / 2, gz);
-        const left = box(bead, Math.max(0.02, gh - bead), bead, col, matOpts);
-        left.position.set(cx - gw / 2, cy, gz);
-        const right = box(bead, Math.max(0.02, gh - bead), bead, col, matOpts);
-        right.position.set(cx + gw / 2, cy, gz);
+      // —— Doors + blue gasket on OUTER perimeter of door panels (門邊膠邊) ——
+      // Matches annotated green rim: vertical outer edge + top/bottom of each door,
+      // on the sealing face — NOT an inset inner rectangular frame.
+      function addOuterPerimeterGasket(doorGroup, w, h, cx, cy) {
+        const bead = 0.036;          // rubber cross-section (visible blue rim)
+        // Door panel BoxGeometry(w,h,0.07) centered at (cx,cy,0); back/inner face ≈ z=-0.035
+        const gz = -0.046;           // proud of inner face toward cabinet body
+        const halfW = w / 2;
+        const halfH = h / 2;
+        const col = 0x2563eb;
+        const matOpts = { roughness: 0.82, metalness: 0.02, emissive: 0x1d4ed8, emissiveIntensity: 0.45 };
+        // Outer rim of the door panel (flush with door edges)
+        const top = box(w, bead, bead, col, matOpts);
+        top.position.set(cx, cy + halfH - bead * 0.5, gz);
+        const bot = box(w, bead, bead, col, matOpts);
+        bot.position.set(cx, cy - halfH + bead * 0.5, gz);
+        const left = box(bead, Math.max(0.02, h - bead * 2), bead, col, matOpts);
+        left.position.set(cx - halfW + bead * 0.5, cy, gz);
+        const right = box(bead, Math.max(0.02, h - bead * 2), bead, col, matOpts);
+        right.position.set(cx + halfW - bead * 0.5, cy, gz);
         [top, bot, left, right].forEach(m => {
           doorGroup.add(m);
           gasketMeshes.push(m);
@@ -978,7 +977,7 @@
       const fzLiner = box(0.84, 0.52, 0.012, 0x334155, { roughness: 0.7 });
       fzLiner.position.set(0.45, 0, -0.038);
       doorFreezer.add(fzLiner);
-      addInnerRubberGasket(doorFreezer, 0.9, 0.58, 0.45, 0);
+      addOuterPerimeterGasket(doorFreezer, 0.9, 0.58, 0.45, 0);
       const fzHandle = box(0.045, 0.28, 0.045, 0x64748b, { metalness: 0.8, roughness: 0.25 });
       fzHandle.position.set(0.84, 0, 0.05);
       doorFreezer.add(fzHandle);
@@ -992,7 +991,7 @@
       const frLiner = box(0.84, 1.30, 0.012, 0x334155, { roughness: 0.7 });
       frLiner.position.set(0.45, 0, -0.038);
       doorFresh.add(frLiner);
-      addInnerRubberGasket(doorFresh, 0.9, 1.38, 0.45, 0);
+      addOuterPerimeterGasket(doorFresh, 0.9, 1.38, 0.45, 0);
       const frHandle = box(0.045, 0.55, 0.045, 0x64748b, { metalness: 0.8, roughness: 0.25 });
       frHandle.position.set(0.84, 0.12, 0.05);
       doorFresh.add(frHandle);

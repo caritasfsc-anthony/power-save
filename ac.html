@@ -80,117 +80,164 @@
       scrollbar-width: none;
     }
     .fan-bar::-webkit-scrollbar { display: none; }
-    @media (max-width: 639px) {
-      #cornerTempHud { display: none; }
+    /* Mobile: clean 3D — no overlays covering the room */
+    @media (max-width: 1023px) {
+      #cornerTempHud { display: none !important; }
+      #dragHint { display: none !important; }
+      #canvasContainer {
+        height: 52vh;
+        min-height: 280px;
+        max-height: 440px;
+      }
+    }
+    @media (min-width: 1024px) {
+      #thermoFloatingBadge {
+        position: absolute;
+        bottom: 5.5rem;
+        left: 1rem;
+        right: auto;
+        width: auto;
+        max-width: 28rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        border-top-width: 1px !important;
+        background: rgba(15, 23, 42, 0.82) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        z-index: 10;
+        padding: 0.75rem 1rem;
+      }
+      #fanBar {
+        position: absolute;
+        bottom: 0.75rem;
+        left: auto;
+        right: 0.75rem;
+        width: auto;
+        max-width: calc(100% - 1.5rem);
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        border-top-width: 1px !important;
+        background: rgba(15, 23, 42, 0.82) !important;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        z-index: 20;
+        padding: 0.375rem;
+      }
+      #fanBar button {
+        flex: 0 1 auto;
+        min-width: 6.5rem;
+      }
     }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="w-full glass z-30 sticky top-0 border-b border-slate-800/80 px-3 sm:px-5 py-2.5 sm:py-3 flex flex-wrap justify-between items-center gap-2">
-    <div class="flex items-center gap-3 sm:gap-4 min-w-0">
-      <img src="mascot.png" alt="長洲節能減碳小先鋒" class="w-14 h-14 sm:w-16 sm:h-16 lg:w-[4.5rem] lg:h-[4.5rem] rounded-2xl object-cover shadow-xl shadow-cyan-500/25 ring-2 ring-cyan-400/40 flex-shrink-0 bg-slate-900"
+  <header class="w-full glass z-30 sticky top-0 border-b border-slate-800/80 px-2.5 sm:px-5 py-1.5 sm:py-3 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+      <img src="mascot.png" alt="長洲節能減碳小先鋒" class="w-10 h-10 sm:w-16 sm:h-16 lg:w-[4.5rem] lg:h-[4.5rem] rounded-xl sm:rounded-2xl object-cover shadow-lg shadow-cyan-500/25 ring-2 ring-cyan-400/40 flex-shrink-0 bg-slate-900"
            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-      <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-500 items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0 hidden">
-        <i data-lucide="wind" class="w-7 h-7 text-white stroke-[2.5]"></i>
+      <div class="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-500 items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0 hidden">
+        <i data-lucide="wind" class="w-5 h-5 sm:w-7 sm:h-7 text-white stroke-[2.5]"></i>
       </div>
       <div class="min-w-0">
-        <h1 class="text-sm sm:text-base lg:text-lg font-black tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent leading-snug">
+        <h1 class="text-xs sm:text-base lg:text-lg font-black tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent leading-snug truncate">
           長洲節能減碳小先鋒計劃
         </h1>
-        <p class="text-[11px] sm:text-xs text-slate-400 mt-0.5">明愛慳電 · 冷氣比較 · 睇氣流、計電費</p>
+        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">明愛慳電 · 冷氣比較</p>
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2 max-w-[55%] sm:max-w-none">
+    <div class="flex items-center justify-end gap-1 sm:gap-2 flex-shrink-0">
       <a href="index.html" class="hidden sm:inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-all">
         <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-300"></i>
         <span>燈泡</span>
       </a>
-      <button id="airflowToggleBtn" class="inline-flex items-center gap-1 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95">
-        <i data-lucide="git-commit" class="w-3.5 h-3.5"></i>
-        <span id="airflowToggleText" class="keep-mobile">氣流</span>
+      <button id="airflowToggleBtn" title="氣流" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-700/80 hover:bg-cyan-600 text-white transition-all active:scale-95">
+        <i data-lucide="git-commit" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+        <span id="airflowToggleText" class="hidden sm:inline">氣流</span>
       </button>
-      <button id="streamModeBtn" class="inline-flex items-center gap-1 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 transition-all active:scale-95">
-        <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
-        <span id="streamModeText" class="keep-mobile">波紋</span>
+      <button id="streamModeBtn" title="波紋" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 transition-all active:scale-95">
+        <i data-lucide="activity" class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-cyan-400"></i>
+        <span id="streamModeText" class="hidden sm:inline">波紋</span>
       </button>
-      <button id="acPowerBtn" class="inline-flex items-center gap-1 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 active:scale-95">
-        <i data-lucide="power" class="w-3.5 h-3.5"></i>
-        <span id="acPowerText" class="keep-mobile">開</span>
+      <button id="acPowerBtn" title="開關" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 active:scale-95">
+        <i data-lucide="power" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+        <span id="acPowerText" class="hidden sm:inline">開</span>
       </button>
-      <button id="quizModalOpenBtn" class="inline-flex items-center gap-1 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-600 text-white transition-all active:scale-95">
-        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
-        <span class="hidden sm:inline keep-mobile">測驗</span>
+      <button id="quizModalOpenBtn" title="測驗" class="inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/90 hover:bg-indigo-600 text-white transition-all active:scale-95">
+        <i data-lucide="help-circle" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+        <span class="hidden sm:inline">測驗</span>
       </button>
     </div>
   </header>
 
   <!-- Cost dashboard -->
-  <section class="w-full bg-slate-900/70 border-b border-slate-800/80 px-3 sm:px-5 py-3">
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/25 flex items-center gap-1">
+  <section class="w-full bg-slate-900/70 border-b border-slate-800/80 px-2.5 sm:px-5 py-2 sm:py-3">
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-3">
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <span class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/25 flex items-center gap-1">
           <i data-lucide="flame" class="w-3 h-3"></i> 夏天好熱
         </span>
-        <span class="text-[11px] text-slate-400">
-          天文台 <strong class="text-rose-300">36.9°C</strong> · 半年電費 · 約 <strong class="text-amber-300">HK$1.41 / 度</strong>
+        <span class="text-[10px] sm:text-[11px] text-slate-400">
+          天文台 <strong class="text-rose-300">36.9°C</strong> · <strong class="text-amber-300">HK$1.41/度</strong>
         </span>
-        <a href="index.html" class="sm:hidden px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">← 燈泡</a>
+        <a href="index.html" class="sm:hidden px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">← 燈泡</a>
       </div>
 
-      <div class="grid grid-cols-3 gap-1.5 sm:gap-2 w-full lg:w-auto lg:min-w-[560px]">
+      <div class="grid grid-cols-3 gap-1 sm:gap-2 w-full lg:w-auto lg:min-w-[560px]">
         <div id="sceneCardCareless" role="button" tabindex="0" aria-label="套用隨意開：21°C、無扇"
-             class="scene-card glass-soft rounded-2xl p-2 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
-          <div class="flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-semibold text-rose-400">
-            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 隨意開
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
+          <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-semibold text-rose-400">
+            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-rose-500"></span> 隨意開
           </div>
           <div class="text-[9px] text-slate-500 mt-0.5 hidden sm:block">21°C · 無扇</div>
-          <div class="mt-1 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
+          <div class="mt-0.5 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
             <div>
-              <div class="text-[8px] sm:text-[9px] text-slate-500">度數</div>
-              <div id="benchCarelessKwh" class="font-mono font-bold text-white text-[11px] sm:text-sm">2,160 kWh</div>
+              <div class="text-[7px] sm:text-[9px] text-slate-500">度數</div>
+              <div id="benchCarelessKwh" class="font-mono font-bold text-white text-[10px] sm:text-sm leading-tight">2,160 kWh</div>
             </div>
-            <div class="border-l border-slate-700 pl-1.5 sm:pl-2">
-              <div class="text-[8px] sm:text-[9px] text-slate-500">電費</div>
-              <div id="benchCarelessCost" class="font-mono font-black text-rose-400 text-[11px] sm:text-sm">HK$ 3,037</div>
+            <div class="border-l border-slate-700 pl-1 sm:pl-2">
+              <div class="text-[7px] sm:text-[9px] text-slate-500">電費</div>
+              <div id="benchCarelessCost" class="font-mono font-black text-rose-400 text-[10px] sm:text-sm leading-tight">HK$ 3,037</div>
             </div>
           </div>
         </div>
 
         <div id="sceneCardCurrent" role="button" tabindex="0" aria-label="而家設定（自訂）"
-             class="scene-card glass-soft rounded-2xl p-2 sm:p-2.5 text-center transition-all border-2 border-sky-500/80 hover:scale-[1.02] active:scale-[0.98] select-none">
-          <div class="flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-bold text-sky-300">
-            <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span> 而家設定
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border-2 border-sky-500/80 hover:scale-[1.02] active:scale-[0.98] select-none">
+          <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-bold text-sky-300">
+            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-400 animate-pulse"></span> 而家設定
           </div>
           <div class="text-[9px] text-slate-500 mt-0.5 hidden sm:block">跟你調</div>
-          <div class="mt-1 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
+          <div class="mt-0.5 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
             <div>
-              <div class="text-[8px] sm:text-[9px] text-slate-500">度數</div>
-              <div id="currentKwh" class="font-mono font-bold text-white text-[11px] sm:text-sm">1,296 kWh</div>
+              <div class="text-[7px] sm:text-[9px] text-slate-500">度數</div>
+              <div id="currentKwh" class="font-mono font-bold text-white text-[10px] sm:text-sm leading-tight">1,296 kWh</div>
             </div>
-            <div class="border-l border-sky-800/50 pl-1.5 sm:pl-2">
-              <div class="text-[8px] sm:text-[9px] text-slate-500">電費</div>
-              <div id="currentCost" class="font-mono font-black text-sky-400 text-[11px] sm:text-sm">HK$ 1,822</div>
+            <div class="border-l border-sky-800/50 pl-1 sm:pl-2">
+              <div class="text-[7px] sm:text-[9px] text-slate-500">電費</div>
+              <div id="currentCost" class="font-mono font-black text-sky-400 text-[10px] sm:text-sm leading-tight">HK$ 1,822</div>
             </div>
           </div>
         </div>
 
         <div id="sceneCardOptimal" role="button" tabindex="0" aria-label="套用慳電模式：25.5°C、四招齊"
-             class="scene-card glass-soft rounded-2xl p-2 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
-          <div class="flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-semibold text-emerald-400">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 慳電模式
+             class="scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all border border-slate-700/80 opacity-85 hover:scale-[1.02] active:scale-[0.98] select-none">
+          <div class="flex items-center justify-center gap-1 text-[9px] sm:text-[11px] font-semibold text-emerald-400">
+            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400"></span> 慳電模式
           </div>
           <div class="text-[9px] text-slate-500 mt-0.5 hidden sm:block">25.5°C · 四招</div>
-          <div class="mt-1 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
+          <div class="mt-0.5 sm:mt-1.5 flex justify-around items-baseline gap-0.5 sm:gap-1 text-xs">
             <div>
-              <div class="text-[8px] sm:text-[9px] text-slate-500">度數</div>
-              <div id="benchOptimalKwh" class="font-mono font-bold text-white text-[11px] sm:text-sm">864 kWh</div>
+              <div class="text-[7px] sm:text-[9px] text-slate-500">度數</div>
+              <div id="benchOptimalKwh" class="font-mono font-bold text-white text-[10px] sm:text-sm leading-tight">864 kWh</div>
             </div>
-            <div class="border-l border-slate-700 pl-1.5 sm:pl-2">
-              <div class="text-[8px] sm:text-[9px] text-slate-500">電費</div>
-              <div id="benchOptimalCost" class="font-mono font-black text-emerald-400 text-[11px] sm:text-sm">HK$ 1,215</div>
+            <div class="border-l border-slate-700 pl-1 sm:pl-2">
+              <div class="text-[7px] sm:text-[9px] text-slate-500">電費</div>
+              <div id="benchOptimalCost" class="font-mono font-black text-emerald-400 text-[10px] sm:text-sm leading-tight">HK$ 1,215</div>
             </div>
           </div>
         </div>
@@ -198,22 +245,22 @@
     </div>
   </section>
 
-  <!-- Main Grid Workspace -->
-  <main class="flex-1 flex flex-col lg:grid lg:grid-cols-12 relative w-full min-h-0 lg:min-h-[calc(100dvh-11rem)]">
+  <!-- Main Grid Workspace: mobile = vertical scroll sections; desktop = side-by-side -->
+  <main class="flex-1 flex flex-col lg:grid lg:grid-cols-12 relative w-full min-h-0 lg:min-h-[calc(100dvh-10rem)]">
 
     <!-- 3D Scene Viewport Column -->
-    <div class="lg:col-span-7 xl:col-span-8 relative flex flex-col h-[42vh] max-h-[380px] min-h-[240px] sm:h-[48vh] sm:max-h-[460px] lg:h-full lg:max-h-none lg:min-h-0 bg-slate-950 overflow-hidden shrink-0">
-      
-      <!-- 3D Canvas Viewport -->
-      <div id="canvasContainer" class="w-full h-full relative cursor-grab active:cursor-grabbing">
-        
-        <!-- Navigation Helper Tip -->
-        <div class="absolute top-3 left-3 z-10 pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full glass-soft text-slate-300 text-[11px] shadow-lg">
+    <div class="lg:col-span-7 xl:col-span-8 relative flex flex-col h-auto lg:h-full lg:min-h-0 bg-slate-950 overflow-hidden shrink-0">
+
+      <!-- Clean 3D canvas (no temp/fan overlays on mobile) -->
+      <div id="canvasContainer" class="w-full relative cursor-grab active:cursor-grabbing lg:flex-1 lg:h-full lg:min-h-0">
+
+        <!-- Navigation Helper Tip (desktop only) -->
+        <div id="dragHint" class="absolute top-3 left-3 z-10 pointer-events-none hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full glass-soft text-slate-300 text-[11px] shadow-lg">
           <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span class="hidden sm:inline">拖曳轉角 · 滾輪放大</span><span class="sm:hidden">拖曳轉角</span>
+          <span>拖曳轉角 · 滾輪放大</span>
         </div>
 
-        <!-- Room 4-Corner Real-Time Temperature Monitor HUD -->
+        <!-- Room corner temps (desktop only; CSS hides on mobile) -->
         <div id="cornerTempHud" class="absolute top-12 left-3 z-10 pointer-events-none flex flex-col gap-1.5">
           <div class="glass px-2.5 py-1.5 rounded-lg border border-slate-700/80 text-[11px] flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-sky-400"></span>
@@ -232,55 +279,53 @@
           </div>
         </div>
 
-        <!-- 3D Thermometer Floating Telemetry Badge -->
-        <div id="thermoFloatingBadge" class="absolute bottom-[4.5rem] sm:bottom-20 left-2 right-2 sm:left-4 sm:right-auto z-10 glass px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-slate-600/80 shadow-xl max-w-md">
-          <div class="flex items-stretch gap-2 sm:gap-3">
-            <div class="flex-1 min-w-0 rounded-xl bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-2 text-center">
-              <div class="text-[10px] sm:text-[11px] font-bold text-cyan-300/90 tracking-wide">室內溫度</div>
-              <div id="roomTempDisplay" class="mt-0.5 text-xl sm:text-2xl font-black text-cyan-300 font-mono leading-none">25.5°C</div>
-            </div>
-            <div class="flex-1 min-w-0 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-2 text-center">
-              <div class="text-[10px] sm:text-[11px] font-bold text-emerald-300/90 tracking-wide">體感溫度</div>
-              <div id="perceivedTempDisplay" class="mt-0.5 text-xl sm:text-2xl font-black text-emerald-300 font-mono leading-none">24.0°C</div>
-            </div>
-            <div class="hidden sm:flex items-center">
-              <div id="thermoBadgePill" class="text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
-                舒服又慳電
-              </div>
+      </div>
+
+      <!-- Temp bar: BELOW canvas on mobile; floats over canvas on desktop (CSS) -->
+      <div id="thermoFloatingBadge" class="relative z-10 w-full px-3 py-2.5 border-t border-slate-800/90 bg-slate-900/95">
+        <div class="flex items-stretch gap-2 sm:gap-3 max-w-lg mx-auto lg:mx-0">
+          <div class="flex-1 min-w-0 rounded-xl bg-cyan-500/10 border border-cyan-500/35 px-3 py-2.5 text-center">
+            <div class="text-[11px] font-bold text-cyan-300/90 tracking-wide">室內溫度</div>
+            <div id="roomTempDisplay" class="mt-1 text-2xl sm:text-3xl font-black text-cyan-300 font-mono leading-none">25.5°C</div>
+          </div>
+          <div class="flex-1 min-w-0 rounded-xl bg-emerald-500/10 border border-emerald-500/35 px-3 py-2.5 text-center">
+            <div class="text-[11px] font-bold text-emerald-300/90 tracking-wide">體感溫度</div>
+            <div id="perceivedTempDisplay" class="mt-1 text-2xl sm:text-3xl font-black text-emerald-300 font-mono leading-none">24.0°C</div>
+          </div>
+          <div class="flex items-center shrink-0">
+            <div id="thermoBadgePill" class="text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+              舒服又慳電
             </div>
           </div>
-          <div class="sm:hidden mt-1.5 text-center">
-            <span id="thermoBadgePillMobile" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">舒服又慳電</span>
+        </div>
+        <span id="thermoBadgePillMobile" class="sr-only">舒服又慳電</span>
+      </div>
+
+      <!-- Fan placement: BELOW canvas (and temp) on mobile; floats on desktop -->
+      <div id="fanBar" class="fan-bar relative z-20 w-full flex gap-1.5 justify-stretch p-2 border-t border-slate-800/90 bg-slate-950/95 overflow-x-auto">
+        <button id="fanBtnCorrect" class="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 bg-cyan-600/30 border-2 border-cyan-500 text-white font-medium shadow-md">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-sm shrink-0"></span>
+          <div class="text-left min-w-0">
+            <div class="text-[9px] text-cyan-300 font-bold">正確</div>
+            <div class="text-[11px] font-black truncate">出風口下</div>
           </div>
-        </div>
+        </button>
 
-        <!-- Circulator Fan Position Quick Switcher -->
-        <div class="absolute bottom-2 sm:bottom-3 left-2 right-2 sm:left-auto sm:right-3 z-20 fan-bar flex gap-1.5 justify-stretch sm:justify-center glass p-1.5 rounded-2xl shadow-2xl overflow-x-auto">
-          <button id="fanBtnCorrect" class="flex-1 sm:flex-none min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-2 sm:px-3 py-2 rounded-xl transition-all duration-200 bg-cyan-600/30 border-2 border-cyan-500 text-white font-medium shadow-md">
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-cyan-400 shadow-sm shrink-0"></span>
-            <div class="text-left min-w-0">
-              <div class="text-[9px] sm:text-[10px] text-cyan-300 font-bold">正確</div>
-              <div class="text-[11px] sm:text-xs font-black truncate">出風口下</div>
-            </div>
-          </button>
+        <button id="fanBtnWrong" class="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white font-medium">
+          <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+          <div class="text-left min-w-0">
+            <div class="text-[9px] text-slate-400">唔啱</div>
+            <div class="text-[11px] font-semibold truncate">放書枱</div>
+          </div>
+        </button>
 
-          <button id="fanBtnWrong" class="flex-1 sm:flex-none min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-2 sm:px-3 py-2 rounded-xl transition-all duration-200 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white font-medium">
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-400 shrink-0"></span>
-            <div class="text-left min-w-0">
-              <div class="text-[9px] sm:text-[10px] text-slate-400">唔啱</div>
-              <div class="text-[11px] sm:text-xs font-semibold truncate">放書枱</div>
-            </div>
-          </button>
-
-          <button id="fanBtnOff" class="flex-1 sm:flex-none min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-2 sm:px-3 py-2 rounded-xl transition-all duration-200 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white font-medium">
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-500 shrink-0"></span>
-            <div class="text-left min-w-0">
-              <div class="text-[9px] sm:text-[10px] text-slate-400">關扇</div>
-              <div class="text-[11px] sm:text-xs font-semibold truncate">淨冷氣</div>
-            </div>
-          </button>
-        </div>
-
+        <button id="fanBtnOff" class="flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white font-medium">
+          <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>
+          <div class="text-left min-w-0">
+            <div class="text-[9px] text-slate-400">關扇</div>
+            <div class="text-[11px] font-semibold truncate">淨冷氣</div>
+          </div>
+        </button>
       </div>
 
     </div>
@@ -476,8 +521,8 @@
 
     function init3D() {
       const container = document.getElementById('canvasContainer');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+      const width = Math.max(container.clientWidth, 320);
+      const height = Math.max(container.clientHeight, 240);
 
       // 1. Scene
       scene = new THREE.Scene();
@@ -1107,9 +1152,11 @@
     function onWindowResize() {
       if (!renderer || !camera) return;
       const c = document.getElementById('canvasContainer');
-      camera.aspect = c.clientWidth / c.clientHeight;
+      const w = Math.max(c.clientWidth, 1);
+      const h = Math.max(c.clientHeight, 1);
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(c.clientWidth, c.clientHeight);
+      renderer.setSize(w, h);
     }
 
     function updateCalculationsAndUI() {
@@ -1221,7 +1268,7 @@
       const pill = document.getElementById('thermoBadgePill');
       const pillM = document.getElementById('thermoBadgePillMobile');
       if (pill) { pill.innerText = pillText; pill.className = pillClsBase + pillTone; }
-      if (pillM) { pillM.innerText = pillText; pillM.className = pillClsMobile + pillTone; }
+      if (pillM) { pillM.innerText = pillText; pillM.className = "sr-only"; }
 
       // Keep optimal card numbers in sync with the same math as live controls
       const optWatts = 900 * (1.0 - 0.05) + 35; // 25.5°C + short-trip tip + correct fan
@@ -1259,7 +1306,7 @@
         current: document.getElementById('sceneCardCurrent'),
         optimal: document.getElementById('sceneCardOptimal')
       };
-      const base = "scene-card glass-soft rounded-2xl p-2 sm:p-2.5 text-center transition-all hover:scale-[1.02] active:scale-[0.98] select-none ";
+      const base = "scene-card glass-soft rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 text-center transition-all hover:scale-[1.02] active:scale-[0.98] select-none ";
       if (cards.careless) {
         cards.careless.className = base + (state.activeScene === 'careless'
           ? "border-2 border-rose-500/90 opacity-100 shadow-lg shadow-rose-900/20"
@@ -1289,10 +1336,10 @@
       const textSpan = document.getElementById('acPowerText');
       if (acPowerBtn && textSpan) {
         if (state.isAcOn) {
-          acPowerBtn.className = "inline-flex items-center gap-1 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 active:scale-95";
+          acPowerBtn.className = "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 active:scale-95";
           textSpan.innerText = "開";
         } else {
-          acPowerBtn.className = "inline-flex items-center gap-1 min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all border border-slate-700 active:scale-95";
+          acPowerBtn.className = "inline-flex items-center justify-center gap-1 min-h-[36px] min-w-[36px] sm:min-w-0 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all border border-slate-700 active:scale-95";
           textSpan.innerText = "關";
         }
       }
@@ -1361,7 +1408,7 @@
       const btnOff = document.getElementById('fanBtnOff');
 
       function syncFanButtons() {
-        const baseFan = "flex-1 sm:flex-none min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-2 sm:px-3 py-2 rounded-xl transition-all duration-200 font-medium ";
+        const baseFan = "flex-1 min-w-0 flex items-center justify-center gap-1.5 min-h-[44px] px-2 py-2 rounded-xl transition-all duration-200 font-medium ";
         [btnCorrect, btnWrong, btnOff].forEach(b => {
           b.className = baseFan + "bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white";
         });
